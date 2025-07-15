@@ -13,27 +13,26 @@ def login():
     email = data.get('email')
     password = data.get('password')
     
-    user = Utilisateur.query.filter_by(email=email).first()
+    user = Utilisateur.query.filter_by(Email=email).first()
     
-    if not user or not check_password_hash(user.mot_de_passe, password):
+    if not user or not user.check_password(password):
         return jsonify({'error': 'Identifiants invalides'}), 401
     
-    # Création du token JWT
     access_token = create_access_token(identity={
-        'id': user.id,
-        'role': user.role,
-        'email': user.email
+        'id': user.Id_user,
+        'role': user.Role,
+        'email': user.Email
     })
     
-    audit_log(user.id, 'CONNEXION', f"Utilisateur connecté: {user.email}")
+    audit_log(user.Id_user, 'CONNEXION', f"Utilisateur connecté: {user.Email}")
     
     return jsonify({
         'access_token': access_token,
         'user': {
-            'id': user.id,
-            'nom': user.nom,
-            'email': user.email,
-            'role': user.role
+            'id': user.Id_user,
+            'nom': user.Nom_user,
+            'email': user.Email,
+            'role': user.Role
         }
     }), 200
 
@@ -42,22 +41,22 @@ def register():
     data = request.get_json()
     
     # Vérifier si l'email existe déjà
-    if Utilisateur.query.filter_by(email=data['email']).first():
+    if Utilisateur.query.filter_by(Email=data['email']).first():
         return jsonify({'error': 'Email déjà utilisé'}), 400
     
     new_user = Utilisateur(
-        nom=data['nom'],
-        email=data['email'],
-        telephone=data.get('telephone'),
-        role='client',
-        activite=data.get('activite'),
-        pays=data.get('pays')
+        Nom_user=data['nom'],
+        Email=data['email'],
+        phone_user=data.get('telephone'),
+        Role='client',
+        ActiviteClient=data.get('activite'),
+        PaysClient=data.get('pays')
     )
     new_user.set_password(data['password'])
     
     db.session.add(new_user)
     db.session.commit()
     
-    audit_log(new_user.id, 'CREATION', f"Nouvel utilisateur: {new_user.email}")
+    audit_log(new_user.Id_user, 'CREATION', f"Nouvel utilisateur: {new_user.Email}")
     
     return jsonify({'message': 'Compte créé avec succès'}), 201

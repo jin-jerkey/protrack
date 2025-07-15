@@ -3,27 +3,22 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class Utilisateur(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nom = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    mot_de_passe = db.Column(db.String(255), nullable=False)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
-    telephone = db.Column(db.String(20))
-    role = db.Column(db.Enum('admin', 'client', name='role_enum'), nullable=False)
-    activite = db.Column(db.String(150))
-    pays = db.Column(db.String(100))
-    
-    projets = db.relationship('Projet', backref='client', lazy=True)
-    documents = db.relationship('Document', backref='uploader', lazy=True)
-    messages = db.relationship('Message', backref='auteur', lazy=True)
-    notifications = db.relationship('Notification', backref='destinataire', lazy=True)
-    audit_logs = db.relationship('AuditLog', backref='utilisateur', lazy=True)
-    
+    __tablename__ = 'utilisateur'
+    Id_user = db.Column(db.Integer, primary_key=True)
+    Nom_user = db.Column(db.String(100))
+    Email = db.Column(db.String(150), unique=True)
+    Mot_passe = db.Column(db.String(255))
+    Role = db.Column(db.Enum('admin', 'client'))
+    Date_creation = db.Column(db.DateTime)
+    phone_user = db.Column(db.String(20))
+    ActiviteClient = db.Column(db.String(150))
+    PaysClient = db.Column(db.String(100))
+
     def set_password(self, password):
-        self.mot_de_passe = generate_password_hash(password)
+        self.Mot_passe = generate_password_hash(password)
     
     def check_password(self, password):
-        return check_password_hash(self.mot_de_passe, password)
+        return check_password_hash(self.Mot_passe, password)
 
 class Projet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,7 +54,7 @@ class Document(db.Model):
     taille = db.Column(db.BigInteger)
     type = db.Column(db.String(50))
     projet_id = db.Column(db.Integer, db.ForeignKey('projet.id'), nullable=False)
-    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.Id_user'), nullable=False)
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,7 +62,7 @@ class Message(db.Model):
     date_message = db.Column(db.DateTime, default=datetime.utcnow)
     type = db.Column(db.Enum('commentaire', 'notification', 'message', name='type_message_enum'))
     projet_id = db.Column(db.Integer, db.ForeignKey('projet.id'), nullable=False)
-    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.Id_user'), nullable=False)
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -76,7 +71,7 @@ class Notification(db.Model):
     sujet = db.Column(db.String(255))
     contenu = db.Column(db.Text)
     lu = db.Column(db.Boolean, default=False)
-    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.Id_user'), nullable=False)
     projet_id = db.Column(db.Integer, db.ForeignKey('projet.id'))
 
 class AuditLog(db.Model):
@@ -86,4 +81,4 @@ class AuditLog(db.Model):
     id_element = db.Column(db.Integer)
     details = db.Column(db.Text)
     date_action = db.Column(db.DateTime, default=datetime.utcnow)
-    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateur.Id_user'), nullable=False)

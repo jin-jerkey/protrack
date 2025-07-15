@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 09, 2025 at 04:43 PM
+-- Generation Time: Jul 15, 2025 at 11:55 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -28,14 +28,22 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `audit_log` (
-  `IdLog` int(11) NOT NULL,
-  `ActionType` varchar(50) NOT NULL,
-  `TableAffectee` varchar(50) NOT NULL,
-  `IdElement` int(11) DEFAULT NULL,
-  `Details` text DEFAULT NULL,
-  `DateAction` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Id_user` int(11) NOT NULL
+  `id` int(11) NOT NULL,
+  `action` varchar(50) NOT NULL,
+  `table_affectee` varchar(50) NOT NULL,
+  `id_element` int(11) DEFAULT NULL,
+  `details` text DEFAULT NULL,
+  `date_action` datetime DEFAULT NULL,
+  `utilisateur_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `audit_log`
+--
+
+INSERT INTO `audit_log` (`id`, `action`, `table_affectee`, `id_element`, `details`, `date_action`, `utilisateur_id`) VALUES
+(1, 'CONNEXION', '', NULL, 'Utilisateur connecté: stevejerkey@gmail.com', '2025-07-15 09:46:46', 1),
+(2, 'CONNEXION', '', NULL, 'Utilisateur connecté: stevejerkey@gmail.com', '2025-07-15 09:52:31', 1);
 
 -- --------------------------------------------------------
 
@@ -141,6 +149,13 @@ CREATE TABLE `utilisateur` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Dumping data for table `utilisateur`
+--
+
+INSERT INTO `utilisateur` (`Id_user`, `Nom_user`, `Email`, `Mot_passe`, `Date_creation`, `phone_user`, `Role`, `ActiviteClient`, `PaysClient`) VALUES
+(1, 'Steve Jerkey', 'stevejerkey@gmail.com', 'scrypt:32768:8:1$TbG7GZv8rcNknvvY$95adf3a42c9799c8f0d40d6ec1d2c8d9ae678c2ed4ad20cf8cef9a1615e3b75627eff4c9184a7609cfaf4d747e6c0837d184dd07dae3cbcc946fd68b56a6417d', '2025-07-11 16:29:23', '0698312554', 'client', 'banque', 'Cameroun');
+
+--
 -- Indexes for dumped tables
 --
 
@@ -148,8 +163,8 @@ CREATE TABLE `utilisateur` (
 -- Indexes for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  ADD PRIMARY KEY (`IdLog`),
-  ADD KEY `Id_user` (`Id_user`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `utilisateur_id` (`utilisateur_id`);
 
 --
 -- Indexes for table `document`
@@ -193,8 +208,7 @@ ALTER TABLE `taches`
 -- Indexes for table `utilisateur`
 --
 ALTER TABLE `utilisateur`
-  ADD PRIMARY KEY (`Id_user`),
-  ADD UNIQUE KEY `Email` (`Email`);
+  ADD PRIMARY KEY (`Id_user`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -204,7 +218,7 @@ ALTER TABLE `utilisateur`
 -- AUTO_INCREMENT for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `IdLog` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `document`
@@ -240,7 +254,7 @@ ALTER TABLE `taches`
 -- AUTO_INCREMENT for table `utilisateur`
 --
 ALTER TABLE `utilisateur`
-  MODIFY `Id_user` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `Id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables
@@ -250,7 +264,7 @@ ALTER TABLE `utilisateur`
 -- Constraints for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  ADD CONSTRAINT `audit_log_ibfk_1` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
+  ADD CONSTRAINT `audit_log_ibfk_1` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `document`
