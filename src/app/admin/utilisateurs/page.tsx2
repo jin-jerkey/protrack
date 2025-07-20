@@ -1,0 +1,262 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Sidebar from '@/app/component/siderbar';
+
+interface Utilisateur {
+  id: number;
+  nom: string;
+  email: string;
+  telephone?: string;
+  role: string;
+  activite?: string;
+  pays?: string;
+}
+
+export default function UtilisateursAdminPage() {
+  const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
+  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
+  const [form, setForm] = useState<{
+    nom: string;
+    email: string;
+    telephone: string;
+    role: string;
+    activite: string;
+    pays: string;
+    password?: string;
+  }>({
+    nom: '',
+    email: '',
+    telephone: '',
+    role: 'client',
+    activite: '',
+    pays: '',
+    password: ''
+  });
+  const [editId, setEditId] = useState<number | null>(null);
+
+  // Récupérer tous les utilisateurs
+  const fetchUtilisateurs = async () => {
+    const res = await fetch('http://localhost:5000/api/utilisateur/', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      console.log('Utilisateurs reçus:', data); // Ajoute ceci
+      setUtilisateurs(data);
+    } else {
+      setUtilisateurs([]);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) setUser(JSON.parse(userData));
+    }
+    fetchUtilisateurs();
+  }, []);
+
+  // Création ou modification d'utilisateur
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Construction du body comme dans register
+    const body: {
+      nom: string;
+      email: string;
+      password?: string;
+      telephone: string;
+      activite: string;
+      pays: string;
+      role: string;
+    } = {
+      nom: form.nom,
+      email: form.email,
+      password: form.password,
+      telephone: form.telephone,
+      activite: form.activite,
+      pays: form.pays,
+      role: form.role
+    };
+
+    // Pour la modification, retire password si vide
+    if (editId && !form.password) {
+      delete body.password;
+    }
+
+    // Pour la création, password doit être présent et non vide
+    if (!editId && !form.password) {
+      alert('Le mot de passe est requis pour la création.');
+      return;
+    }
+
+    const method = editId ? 'PUT' : 'POST';
+    const url = editId
+      ? `http://localhost:5000/api/utilisateur/${editId}`
+      : 'http://localhost:5000/api/utilisateur/';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        alert(result.message || 'Opération réussie');
+        fetchUtilisateurs();
+        setForm({
+          nom: '',
+          email: '',
+          telephone: '',
+          role: 'client',
+          activite: '',
+          pays: '',
+          password: ''
+        });
+        setEditId(null);
+      } else {
+        alert(`Erreur: ${result.error || 'Une erreur est survenue'}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la requête:', error);
+      alert('Erreur de connexion au serveur');
+    }
+  };
+
+  // Pré-remplir le formulaire pour modification
+  const handleEdit = (u: Utilisateur) => {
+    setEditId(u.id);
+    setForm({
+      nom: u.nom,
+      email: u.email,
+      telephone: u.telephone || '',
+      role: u.role,
+      activite: u.activite || '',
+      pays: u.pays || '',
+      password: ''
+    });
+  };
+
+  // Supprimer un utilisateur
+  const handleDelete = async (id: number) => {
+    if (!confirm('Confirmer la suppression ?')) return;
+    const res = await fetch(`http://localhost:5000/api/utilisateur/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+    if (res.ok) {
+      fetchUtilisateurs();
+    }
+  };
+
+  return (
+    <div className="flex">
+      <Sidebar user={user} />
+      <main className="flex-1 p-8 bg-gray-100 min-h-screen">
+        <h1 className="text-3xl font-bold mb-8 text-red-700">Gestion des utilisateurs</h1>
+
+        {/* Formulaire création/modification */}
+        <section className="mb-10 bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
+          <h2 className="text-xl font-semibold mb-4 text-red-800">{editId ? 'Modifier' : 'Créer'} un utilisateur</h2>
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+              <input type="text" name="nom" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input type="email" name="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+              <input type="text" name="telephone" value={form.telephone} onChange={e => setForm({ ...form, telephone: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+              <select name="role" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" required>
+                <option value="client">Client</option>
+                <option value="admin">Directeur General</option>
+                <option value="administratif">Directeur Prestataire</option>
+                <option value="secretaire">Secretaire</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Activité</label>
+              <input type="text" name="activite" value={form.activite} onChange={e => setForm({ ...form, activite: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pays</label>
+              <input type="text" name="pays" value={form.pays} onChange={e => setForm({ ...form, pays: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe {editId ? '(laisser vide pour ne pas changer)' : ''}</label>
+              <input type="password" name="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2" required={!editId} />
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button type="submit" className="bg-red-700 text-white px-6 py-2 rounded hover:bg-red-800 font-semibold">
+                {editId ? 'Modifier' : 'Créer'}
+              </button>
+              {editId && (
+                <button type="button" className="ml-4 px-6 py-2 rounded border border-gray-400 text-gray-700" onClick={() => { setEditId(null); setForm({ nom: '', email: '', telephone: '', role: 'client', activite: '', pays: '', password: '' }); }}>
+                  Annuler
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        {/* Liste des utilisateurs */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4 text-red-800">Liste des utilisateurs</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white rounded-lg shadow border">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 border-b">Nom</th>
+                  <th className="px-4 py-2 border-b">Email</th>
+                  <th className="px-4 py-2 border-b">Téléphone</th>
+                  <th className="px-4 py-2 border-b">Rôle</th>
+                  <th className="px-4 py-2 border-b">Activité</th>
+                  <th className="px-4 py-2 border-b">Pays</th>
+                  <th className="px-4 py-2 border-b">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {utilisateurs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-4 text-gray-500">Aucun utilisateur trouvé.</td>
+                  </tr>
+                ) : (
+                  utilisateurs.map(u => (
+                    <tr key={u.id}>
+                      <td className="px-4 py-2 border-b">{u.nom}</td>
+                      <td className="px-4 py-2 border-b">{u.email}</td>
+                      <td className="px-4 py-2 border-b">{u.telephone || '-'}</td>
+                      <td className="px-4 py-2 border-b">{u.role}</td>
+                      <td className="px-4 py-2 border-b">{u.activite || '-'}</td>
+                      <td className="px-4 py-2 border-b">{u.pays || '-'}</td>
+                      <td className="px-4 py-2 border-b">
+                        <button className="text-blue-700 hover:underline mr-2" onClick={() => handleEdit(u)}>Modifier</button>
+                        <button className="text-red-700 hover:underline" onClick={() => handleDelete(u.id)}>Supprimer</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}

@@ -3,6 +3,16 @@
 import Sidebar from '@/app/component/siderbar';
 import { useEffect, useState } from 'react';
 
+// Ajout des nouvelles interfaces
+interface AuditLog {
+  id: number;
+  action: string;
+  details: string;
+  date_action: string;
+  utilisateur: string;
+}
+
+
 export default function Dashboard() {
   // Récupération des infos utilisateur depuis le localStorage
   const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
@@ -21,6 +31,21 @@ export default function Dashboard() {
   const [rapports, setRapports] = useState<
     { id: string; titre: string; valeur: string | number }[]
   >([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  // const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+  //   totalClients: 0,
+  //   totalProjets: 0,
+  //   projetsTermines: 0,
+  //   projetsEnCours: 0,
+  //   projetsEnPause: 0,
+  //   alertes: 0,
+  //   retards: 0,
+  //   equipes: 0,
+  //   utilisateursActifs: 0,
+  //   tauxCompletionProjets: 0,
+  //   nombreTaches: 0,
+  //   tachesTerminees: 0
+  // });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -55,12 +80,27 @@ export default function Dashboard() {
         { id: '2', titre: 'Clients actifs', valeur: 10 },
         { id: '3', titre: 'Retards', valeur: 1 },
       ]));
+
+    // Ajout de la récupération des logs d'audit
+    const fetchAuditLogs = async () => {
+      const res = await fetch('http://localhost:5000/api/audit/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data);
+      }
+    };
+
+    fetchAuditLogs();
   }, []);
 
   return (
     <div className="flex">
       <Sidebar user={user} />
-      <main className="flex-1 p-8 bg-gray-100 min-h-screen">
+      <main className="flex-1 ml-72 md:ml-60 sm:ml-20 p-8 bg-gray-50 min-h-screen">
         <h1 className="text-4xl font-extrabold mb-8 text-center text-red-700 drop-shadow-lg bg-white py-4 rounded-lg shadow">
           Tableau de bord Administrateur
         </h1>
@@ -122,6 +162,35 @@ export default function Dashboard() {
               ))
             )}
           </ul>
+        </section>
+
+        {/* Nouvelles sections */}
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-red-800">Dernières activités</h2>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Utilisateur</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Détails</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {auditLogs.map(log => (
+                  <tr key={log.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.action}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.utilisateur}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(log.date_action).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{log.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
     </div>

@@ -13,17 +13,14 @@ interface Utilisateur {
   pays?: string;
 }
 
-export default function UtilisateursAdminPage() {
+export default function ClientsAdminPage() {
   const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [showArchived, setShowArchived] = useState(false);
   const [form, setForm] = useState<{
     nom: string;
     email: string;
     telephone: string;
-    role: string;
     activite: string;
     pays: string;
     password?: string;
@@ -31,15 +28,14 @@ export default function UtilisateursAdminPage() {
     nom: '',
     email: '',
     telephone: '',
-    role: 'client',
     activite: '',
     pays: '',
     password: ''
   });
   const [editId, setEditId] = useState<number | null>(null);
 
-  // Récupérer tous les utilisateurs
-  const fetchUtilisateurs = async () => {
+  // Filtrer uniquement les clients lors de la récupération
+  const fetchClients = async () => {
     const res = await fetch('http://localhost:5000/api/utilisateur/', {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -47,8 +43,9 @@ export default function UtilisateursAdminPage() {
     });
     if (res.ok) {
       const data = await res.json();
-      console.log('Utilisateurs reçus:', data);
-      setUtilisateurs(data);
+      // Filtrer uniquement les clients
+      const clientsOnly = data.filter((u: Utilisateur) => u.role === 'client');
+      setUtilisateurs(clientsOnly);
     } else {
       setUtilisateurs([]);
     }
@@ -59,43 +56,28 @@ export default function UtilisateursAdminPage() {
       const userData = localStorage.getItem('user');
       if (userData) setUser(JSON.parse(userData));
     }
-    fetchUtilisateurs();
+    fetchClients();
   }, []);
 
-  // Filtrer les utilisateurs
-  const filteredUtilisateurs = utilisateurs.filter(u => {
-    const matchesSearch = u.nom.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         u.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  // Simplifier les filtres car on n'a plus que des clients
+  const filteredUtilisateurs = utilisateurs.filter(u => 
+    u.nom.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Calculer les statistiques
-  const totalUsers = utilisateurs.length;
-  const adminCount = utilisateurs.filter(u => u.role === 'admin').length;
-  const chefProjetCount = utilisateurs.filter(u => u.role === 'administratif').length;
-  const membresCount = utilisateurs.filter(u => u.role === 'client' || u.role === 'secretaire').length;
+  // Simplifier les statistiques pour les clients
+  const totalClients = utilisateurs.length;
+  const activeClients = utilisateurs.filter(u => u.activite).length;
+  const localClients = utilisateurs.filter(u => u.pays === 'Cameroun').length;
+  const internationalClients = utilisateurs.filter(u => u.pays && u.pays !== 'Cameroun').length;
 
   // Création ou modification d'utilisateur
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const body: {
-      nom: string;
-      email: string;
-      password?: string;
-      telephone: string;
-      activite: string;
-      pays: string;
-      role: string;
-    } = {
-      nom: form.nom,
-      email: form.email,
-      password: form.password,
-      telephone: form.telephone,
-      activite: form.activite,
-      pays: form.pays,
-      role: form.role
+    const body = {
+      ...form,
+      role: 'client' // Forcer le rôle client
     };
 
     if (editId && !form.password) {
@@ -125,12 +107,11 @@ export default function UtilisateursAdminPage() {
       const result = await res.json();
       if (res.ok) {
         alert(result.message || 'Opération réussie');
-        fetchUtilisateurs();
+        fetchClients();
         setForm({
           nom: '',
           email: '',
           telephone: '',
-          role: 'client',
           activite: '',
           pays: '',
           password: ''
@@ -151,7 +132,6 @@ export default function UtilisateursAdminPage() {
       nom: u.nom,
       email: u.email,
       telephone: u.telephone || '',
-      role: u.role,
       activite: u.activite || '',
       pays: u.pays || '',
       password: ''
@@ -167,27 +147,7 @@ export default function UtilisateursAdminPage() {
       }
     });
     if (res.ok) {
-      fetchUtilisateurs();
-    }
-  };
-
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'admin': return 'Directeur General';
-      case 'administratif': return 'Directeur Prestataire';
-      case 'secretaire': return 'Secretaire';
-      case 'client': return 'Client';
-      default: return role;
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'administratif': return 'bg-blue-100 text-blue-800';
-      case 'secretaire': return 'bg-green-100 text-green-800';
-      case 'client': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      fetchClients();
     }
   };
 
@@ -197,36 +157,22 @@ export default function UtilisateursAdminPage() {
       <main className="flex-1 ml-72 md:ml-60 sm:ml-20 p-8 bg-gray-50 min-h-screen">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-red-700 mb-2">Gestion des utilisateurs</h1>
-          <p className="text-gray-600">Gérez les membres de votre équipe et leurs permissions</p>
+          <h1 className="text-3xl font-bold text-red-700 mb-2">Gestion des clients</h1>
+          <p className="text-gray-600">Gérez vos clients et leurs informations</p>
         </div>
 
-        {/* Statistiques */}
+        {/* Statistiques adaptées aux clients */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-gray-400">
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-gray-100 mr-4">
                 <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Total</div>
-                <div className="text-2xl font-bold text-gray-800">{totalUsers}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-400">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-red-100 mr-4">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Administrateurs</div>
-                <div className="text-2xl font-bold text-red-700">{adminCount}</div>
+                <div className="text-sm text-gray-600">Total Clients</div>
+                <div className="text-2xl font-bold text-gray-800">{totalClients}</div>
               </div>
             </div>
           </div>
@@ -239,8 +185,8 @@ export default function UtilisateursAdminPage() {
                 </svg>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Chefs de projet</div>
-                <div className="text-2xl font-bold text-blue-700">{chefProjetCount}</div>
+                <div className="text-sm text-gray-600">Clients Actifs</div>
+                <div className="text-2xl font-bold text-blue-700">{activeClients}</div>
               </div>
             </div>
           </div>
@@ -249,12 +195,26 @@ export default function UtilisateursAdminPage() {
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-green-100 mr-4">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                 </svg>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Membres</div>
-                <div className="text-2xl font-bold text-green-700">{membresCount}</div>
+                <div className="text-sm text-gray-600">Clients Locaux</div>
+                <div className="text-2xl font-bold text-green-700">{localClients}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-400">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-yellow-100 mr-4">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Clients Internationaux</div>
+                <div className="text-2xl font-bold text-yellow-700">{internationalClients}</div>
               </div>
             </div>
           </div>
@@ -262,7 +222,7 @@ export default function UtilisateursAdminPage() {
 
         {/* Formulaire création/modification */}
         <section className="mb-8 bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
-          <h2 className="text-xl font-semibold mb-6 text-red-800">{editId ? 'Modifier' : 'Créer'} un utilisateur</h2>
+          <h2 className="text-xl font-semibold mb-6 text-red-800">{editId ? 'Modifier' : 'Créer'} un client</h2>
           <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
@@ -295,21 +255,6 @@ export default function UtilisateursAdminPage() {
                 onChange={e => setForm({ ...form, telephone: e.target.value })} 
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Rôle</label>
-              <select 
-                name="role" 
-                value={form.role} 
-                onChange={e => setForm({ ...form, role: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                required
-              >
-                <option value="client">Client</option>
-                <option value="admin">Directeur General</option>
-                <option value="administratif">Directeur Prestataire</option>
-                <option value="secretaire">Secretaire</option>
-              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Activité</label>
@@ -351,7 +296,7 @@ export default function UtilisateursAdminPage() {
                   className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
                   onClick={() => { 
                     setEditId(null); 
-                    setForm({ nom: '', email: '', telephone: '', role: 'client', activite: '', pays: '', password: '' }); 
+                    setForm({ nom: '', email: '', telephone: '', activite: '', pays: '', password: '' }); 
                   }}
                 >
                   Annuler
@@ -370,55 +315,25 @@ export default function UtilisateursAdminPage() {
         {/* Filtres et recherche */}
         <section className="mb-6">
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-              <div className="flex-1 max-w-md">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rechercher</label>
-                <input
-                  type="text"
-                  placeholder="Nom ou email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div className="flex items-center space-x-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Filtrer par rôle</label>
-                  <select
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="all">Tous les rôles</option>
-                    <option value="admin">Directeur General</option>
-                    <option value="administratif">Directeur Prestataire</option>
-                    <option value="secretaire">Secretaire</option>
-                    <option value="client">Client</option>
-                  </select>
-                </div>
-                <div className="flex items-center mt-6">
-                  <input
-                    type="checkbox"
-                    id="showArchived"
-                    checked={showArchived}
-                    onChange={(e) => setShowArchived(e.target.checked)}
-                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="showArchived" className="ml-2 text-sm text-gray-700">
-                    Afficher les utilisateurs archivés
-                  </label>
-                </div>
-              </div>
+            <div className="flex-1 max-w-md">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rechercher un client</label>
+              <input
+                type="text"
+                placeholder="Nom ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
             </div>
           </div>
         </section>
 
-        {/* Liste des utilisateurs */}
+        {/* Liste des clients */}
         <section>
           <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-red-800">
-                Liste des utilisateurs ({filteredUtilisateurs.length})
+                Liste des clients ({filteredUtilisateurs.length})
               </h2>
             </div>
             <div className="overflow-x-auto">
@@ -468,8 +383,8 @@ export default function UtilisateursAdminPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(u.role)}`}>
-                            {getRoleDisplayName(u.role)}
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800`}>
+                            Client
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

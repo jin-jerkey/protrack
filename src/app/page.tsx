@@ -64,14 +64,21 @@ export default function LoginPage() {
         setError(data.error || 'Erreur de connexion');
       } else {
         localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user)); // Ajout
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
         // Redirection selon le rôle
-        if (data.user.role === 'admin') {
-          router.push('/admin/dashboard');
-        } else if (data.user.role === 'client') {
-          router.push('/client/dashboard');
-        } else {
-          router.push('/'); // fallback
+        switch(data.user.role) {
+          case 'admin':
+            router.push('/admin/dashboard');
+            break;
+          case 'secretaire':
+            router.push('/secretaire/dashboard');
+            break;
+          case 'client':
+            router.push('/client/dashboard');
+            break;
+          default:
+            router.push('/');
         }
       }
     } catch {
@@ -105,7 +112,7 @@ export default function LoginPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Type de compte
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => handleRoleChange('admin')}
@@ -116,7 +123,19 @@ export default function LoginPage() {
                   }`}
                 >
                   <User className="w-4 h-4 mx-auto mb-1" />
-                  Administrateur
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRoleChange('secretaire')}
+                  className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                    formData.role === 'secretaire'
+                      ? 'bg-red-900 text-white border-2 border-red-700'
+                      : 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  <User className="w-4 h-4 mx-auto mb-1" />
+                  Secrétaire
                 </button>
                 <button
                   type="button"

@@ -1,6 +1,6 @@
 'use client';
 
-import Sidebar from '@/app/component/siderbar';
+ import SidebarClient from '@/app/component/siderbarclient';
 import { useEffect, useState } from 'react';
 
 export default function DashboardPage() {
@@ -69,8 +69,8 @@ export default function DashboardPage() {
 
   return (
     <div className="flex">
-      <Sidebar user={user} />
-      <main className="flex-1 p-8 bg-gray-100 min-h-screen">
+      <SidebarClient user={user} />
+      <main className="flex-1 ml-72 md:ml-60 sm:ml-20 p-8 bg-gray-50 min-h-screen">
         <h1 className="text-4xl font-extrabold mb-8 text-center text-red-700 drop-shadow-lg bg-white py-4 rounded-lg shadow">
           Dashboard
         </h1>

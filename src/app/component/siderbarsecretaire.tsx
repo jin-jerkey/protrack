@@ -3,22 +3,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, User, Home, Folder, ListChecks, FileText, MessageSquare, Bell } from 'lucide-react';
+import { LogOut, User, Home, Calendar, FileText, Bell, ClipboardList } from 'lucide-react';
 import { useState } from 'react';
 
-// Nav items with icons
 const navItems = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
-  { name: 'Client', href: '/admin/clients', icon: User },
-  { name: 'Projets', href: '/admin/projets', icon: Folder },
-  { name: 'Tâches', href: '/taches', icon: ListChecks },
-  { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Utilisateur', href: '/admin/utilisateurs', icon: User },
+  { name: 'Dashboard', href: '/secretaire/dashboard', icon: Home },
+  { name: 'Planification', href: '/secretaire/planification', icon: Calendar },
+  { name: 'Documents', href: '/secretaire/documents', icon: FileText },
+  { name: 'Tâches', href: '/secretaire/taches', icon: ClipboardList },
+  { name: 'Notifications', href: '/secretaire/notifications', icon: Bell },
+  { name: 'Profile', href: '/secretaire/profile', icon: User }
 ];
 
-export default function Sidebar({ user }: { user?: { nom: string; email: string } }) {
+export default function SidebarSecretaire({ user }: { user?: { nom: string; email: string } }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
