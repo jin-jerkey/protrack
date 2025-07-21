@@ -17,12 +17,21 @@ def get_projets():
                 p.NomProjet as nom, 
                 p.Description as description, 
                 p.Statut_projet as statut, 
-                p.Avancement as avancement, 
                 p.DateDebut as dateDebut, 
                 p.DateFinPrevue as dateFinPrevue, 
-                u.Nom_user as client
+                u.Nom_user as client,
+                COUNT(t.IdTache) as nbTaches,
+                SUM(CASE WHEN t.Statut = 'terminée' THEN 1 ELSE 0 END) as nbTachesTerminees,
+                CASE 
+                    WHEN COUNT(t.IdTache) > 0 THEN 
+                        ROUND((SUM(CASE WHEN t.Statut = 'terminée' THEN 1 ELSE 0 END) * 100.0) / COUNT(t.IdTache))
+                    ELSE 0
+                END as avancement
             FROM projet p
             JOIN utilisateur u ON p.IdClient = u.Id_user
+            LEFT JOIN taches t ON t.ID_projet = p.ID_projet
+            GROUP BY p.ID_projet, p.NomProjet, p.Description, p.Statut_projet, 
+                     p.DateDebut, p.DateFinPrevue, u.Nom_user
         """)
         projets = cursor.fetchall()
         return jsonify(projets)
@@ -127,16 +136,24 @@ def get_projet_details(id):
                 p.NomProjet as nom,
                 p.Description as description,
                 p.Statut_projet as statut,
-                p.Avancement as avancement,
                 p.DateDebut as dateDebut,
                 p.DateFinPrevue as dateFinPrevue,
                 u.Nom_user as client,
-                (SELECT COUNT(*) FROM taches WHERE ID_projet = p.ID_projet) as nbTaches,
-                (SELECT COUNT(*) FROM taches WHERE ID_projet = p.ID_projet AND Statut = 'terminée') as nbTachesTerminees
+                COUNT(t.IdTache) as nbTaches,
+                SUM(CASE WHEN t.Statut = 'terminée' THEN 1 ELSE 0 END) as nbTachesTerminees,
+                CASE 
+                    WHEN COUNT(t.IdTache) > 0 THEN 
+                        ROUND((SUM(CASE WHEN t.Statut = 'terminée' THEN 1 ELSE 0 END) * 100.0) / COUNT(t.IdTache))
+                    ELSE 0
+                END as avancement
             FROM projet p
             JOIN utilisateur u ON p.IdClient = u.Id_user
+            LEFT JOIN taches t ON t.ID_projet = p.ID_projet
             WHERE p.ID_projet = %s
+            GROUP BY p.ID_projet, p.NomProjet, p.Description, p.Statut_projet, 
+                     p.DateDebut, p.DateFinPrevue, u.Nom_user
         """, (id,))
+        
         projet = cursor.fetchone()
         if not projet:
             return jsonify({'error': 'Projet non trouvé'}), 404
@@ -182,6 +199,8 @@ def add_tache(id):
     statut = data.get('statut', 'à_faire')
     dateDebut = data.get('dateDebut')
     dateFin = data.get('dateFin')
+    priorite = data.get('priorite', 'moyenne')
+    id_user_assigne = data.get('id_user_assigne')  # Ajout du champ id_user_assigne
 
     if not titre:
         return jsonify({'error': 'Le titre est requis'}), 400
@@ -193,11 +212,35 @@ def add_tache(id):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO taches 
-            (IntituleTache, Description, DateDebutPrevue, DateFinPrevue, Statut, ID_projet)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (titre, description, dateDebut, dateFin, statut, id))
+            (IntituleTache, Description, DateDebutPrevue, DateFinPrevue, 
+             Statut, Priorite, ID_projet, Id_user_assigne)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (titre, description, dateDebut, dateFin, statut, 
+              priorite, id, id_user_assigne))
+        
+        tache_id = cursor.lastrowid
+        
+        # Créer une notification pour l'utilisateur assigné
+        if id_user_assigne:
+            cursor.execute("""
+                INSERT INTO notification 
+                (Type, Sujet, Contenu, Id_user, ID_projet)
+                VALUES ('portal', 'Nouvelle tâche assignée', %s, %s, %s)
+            """, (
+                f"Vous avez été assigné à la tâche: {titre}",
+                id_user_assigne,
+                id
+            ))
+        
         conn.commit()
-        return jsonify({'message': 'Tâche créée'}), 201
+        return jsonify({
+            'message': 'Tâche créée',
+            'id': tache_id
+        }), 201
+        
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
         conn.close()
@@ -250,7 +293,6 @@ def get_projets_client(client_id):
                 p.NomProjet as nom, 
                 p.Description as description, 
                 p.Statut_projet as statut, 
-                p.Avancement as avancement, 
                 p.DateDebut as dateDebut, 
                 p.DateFinPrevue as dateFinPrevue, 
                 u.Nom_user as client

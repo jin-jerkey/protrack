@@ -61,3 +61,35 @@ def add_membre_equipe(id):
     finally:
         cursor.close()
         conn.close()
+
+@equipe_bp.route('/api/equipe/<int:id>', methods=['PUT'])
+def update_equipe(id):
+    data = request.get_json()
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({"error": "Erreur de connexion"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE equipe SET NomEquipe = %s, Description = %s WHERE IdEquipe = %s",
+            (data['nom'], data['description'], id)
+        )
+        conn.commit()
+        return jsonify({"message": "Équipe modifiée"})
+    finally:
+        cursor.close()
+        conn.close()
+
+@equipe_bp.route('/api/equipe/<int:id>', methods=['DELETE'])
+def delete_equipe(id):
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({"error": "Erreur de connexion"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM equipe WHERE IdEquipe = %s", (id,))
+        conn.commit()
+        return jsonify({"message": "Équipe supprimée"})
+    finally:
+        cursor.close()
+        conn.close()

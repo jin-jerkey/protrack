@@ -13,6 +13,8 @@ interface Projet {
   dateDebut?: string;
   dateFinPrevue?: string;
   client: string;
+  nbTaches: number;
+  nbTachesTerminees: number;
 }
 
 // Interface pour les utilisateurs retournés par l'API
@@ -349,15 +351,23 @@ export default function ProjetsAdminPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="w-32 bg-gray-200 rounded-full h-3">
-                            <div
-                              className={`h-3 rounded-full ${
-                                p.avancement < 50 ? 'bg-red-400' : p.avancement < 100 ? 'bg-yellow-400' : 'bg-green-500'
-                              }`}
-                              style={{ width: `${p.avancement}%` }}
-                            />
+                          <div className="flex flex-col">
+                            <div className="w-32 bg-gray-200 rounded-full h-4">
+                              <div
+                                className={`h-4 rounded-full transition-all duration-500 ${
+                                  p.avancement < 30 ? 'bg-red-500' :
+                                  p.avancement < 70 ? 'bg-yellow-500' : 'bg-green-500'
+                                }`}
+                                style={{ width: `${p.avancement}%` }}
+                              />
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              <span className="font-semibold">{p.avancement}%</span>
+                              <span className="text-xs ml-1">
+                                ({p.nbTachesTerminees}/{p.nbTaches} tâches)
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-600 mt-1">{p.avancement}%</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex space-x-2">

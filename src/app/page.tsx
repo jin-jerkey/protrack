@@ -77,6 +77,9 @@ export default function LoginPage() {
           case 'client':
             router.push('/client/dashboard');
             break;
+          case 'employe':
+            router.push('/employe/dashboard');
+            break;
           default:
             router.push('/');
         }
@@ -112,7 +115,7 @@ export default function LoginPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Type de compte
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-4">
                 <button
                   type="button"
                   onClick={() => handleRoleChange('admin')}
@@ -136,6 +139,18 @@ export default function LoginPage() {
                 >
                   <User className="w-4 h-4 mx-auto mb-1" />
                   Secrétaire
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRoleChange('employe')}
+                  className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                    formData.role === 'employe'
+                      ? 'bg-red-900 text-white border-2 border-red-700'
+                      : 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  <User className="w-4 h-4 mx-auto mb-1" />
+                  Employe
                 </button>
                 <button
                   type="button"

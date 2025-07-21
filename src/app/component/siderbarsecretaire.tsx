@@ -8,11 +8,13 @@ import { useState } from 'react';
 
 const navItems = [
   { name: 'Dashboard', href: '/secretaire/dashboard', icon: Home },
+  { name: 'Équipe', href: '/secretaire/equipes', icon: User },
   { name: 'Planification', href: '/secretaire/planification', icon: Calendar },
   { name: 'Documents', href: '/secretaire/documents', icon: FileText },
   { name: 'Tâches', href: '/secretaire/taches', icon: ClipboardList },
   { name: 'Notifications', href: '/secretaire/notifications', icon: Bell },
-  { name: 'Profile', href: '/secretaire/profile', icon: User }
+  { name: 'Profile', href: '/secretaire/profile', icon: User },
+  { name: 'Message', href: '/secretaire/message', icon: User }
 ];
 
 export default function SidebarSecretaire({ user }: { user?: { nom: string; email: string } }) {

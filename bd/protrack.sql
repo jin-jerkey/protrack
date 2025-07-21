@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 20, 2025 at 01:22 AM
+-- Generation Time: Jul 21, 2025 at 03:26 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -43,7 +43,11 @@ CREATE TABLE `audit_log` (
 
 INSERT INTO `audit_log` (`id`, `action`, `table_affectee`, `id_element`, `details`, `date_action`, `utilisateur_id`) VALUES
 (1, 'CONNEXION', '', NULL, 'Utilisateur connecté: stevejerkey@gmail.com', '2025-07-20 00:16:34', 1),
-(2, 'CONNEXION', '', NULL, 'Utilisateur connecté: jin@gmail.com', '2025-07-20 00:17:01', 2);
+(2, 'CONNEXION', '', NULL, 'Utilisateur connecté: jin@gmail.com', '2025-07-20 00:17:01', 2),
+(3, 'CONNEXION', '', NULL, 'Utilisateur connecté: stevejerkey@gmail.com', '2025-07-20 00:41:31', 1),
+(4, 'CONNEXION', '', NULL, 'Utilisateur connecté: jin@gmail.com', '2025-07-21 13:04:55', 2),
+(5, 'CONNEXION', '', NULL, 'Utilisateur connecté: papa@gmail.com', '2025-07-21 13:07:53', 4),
+(6, 'CONNEXION', '', NULL, 'Utilisateur connecté: papa@gmail.com', '2025-07-21 13:37:43', 4);
 
 -- --------------------------------------------------------
 
@@ -76,6 +80,13 @@ CREATE TABLE `equipe` (
   `Description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `equipe`
+--
+
+INSERT INTO `equipe` (`IdEquipe`, `NomEquipe`, `Description`) VALUES
+(1, 'developpeur', '');
+
 -- --------------------------------------------------------
 
 --
@@ -86,6 +97,13 @@ CREATE TABLE `equipe_utilisateur` (
   `IdEquipe` int(11) NOT NULL,
   `Id_user` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `equipe_utilisateur`
+--
+
+INSERT INTO `equipe_utilisateur` (`IdEquipe`, `Id_user`) VALUES
+(1, 4);
 
 -- --------------------------------------------------------
 
@@ -99,7 +117,8 @@ CREATE TABLE `message` (
   `DateMessage` timestamp NOT NULL DEFAULT current_timestamp(),
   `Type` enum('commentaire','notification','message') DEFAULT 'message',
   `ID_projet` int(11) NOT NULL,
-  `Id_user` int(11) NOT NULL
+  `Id_user` int(11) NOT NULL,
+  `Id_destinataire` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -173,7 +192,7 @@ CREATE TABLE `utilisateur` (
   `Mot_passe` varchar(255) NOT NULL,
   `Date_creation` timestamp NOT NULL DEFAULT current_timestamp(),
   `phone_user` varchar(20) DEFAULT NULL,
-  `Role` enum('admin','client','administratif','secretaire') NOT NULL,
+  `Role` enum('admin','client','administratif','secretaire','employe') NOT NULL,
   `ActiviteClient` varchar(150) DEFAULT NULL,
   `PaysClient` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -185,7 +204,8 @@ CREATE TABLE `utilisateur` (
 INSERT INTO `utilisateur` (`Id_user`, `Nom_user`, `Email`, `Mot_passe`, `Date_creation`, `phone_user`, `Role`, `ActiviteClient`, `PaysClient`) VALUES
 (1, 'Steve Jerkey', 'stevejerkey@gmail.com', 'scrypt:32768:8:1$TbG7GZv8rcNknvvY$95adf3a42c9799c8f0d40d6ec1d2c8d9ae678c2ed4ad20cf8cef9a1615e3b75627eff4c9184a7609cfaf4d747e6c0837d184dd07dae3cbcc946fd68b56a6417d', '2025-07-11 15:29:23', '0698312554', 'client', 'banque', 'Cameroun'),
 (2, 'jin', 'jin@gmail.com', 'scrypt:32768:8:1$TbG7GZv8rcNknvvY$95adf3a42c9799c8f0d40d6ec1d2c8d9ae678c2ed4ad20cf8cef9a1615e3b75627eff4c9184a7609cfaf4d747e6c0837d184dd07dae3cbcc946fd68b56a6417d', '2025-07-15 12:26:23', '0698312554', 'admin', 'masseur', 'congo'),
-(3, 'steve jerkey zeufack', 'stevezeufack@gmail.com', 'scrypt:32768:8:1$LSKZJWZshyty8lfj$88fac72aa07315057d60ca9e4aaaa9f688139d5138644dcea3026f53124a25ba43faa99c191d347f0153ada84219ee201a6348ea6a399efebb2112888e3e8b39', '2025-07-15 17:11:27', '698312554', 'client', 'banque', 'Cameroun');
+(3, 'steve jerkey zeufack', 'stevezeufack@gmail.com', 'scrypt:32768:8:1$LSKZJWZshyty8lfj$88fac72aa07315057d60ca9e4aaaa9f688139d5138644dcea3026f53124a25ba43faa99c191d347f0153ada84219ee201a6348ea6a399efebb2112888e3e8b39', '2025-07-15 17:11:27', '698312554', 'client', 'banque', 'Cameroun'),
+(4, 'papa', 'papa@gmail.com', 'scrypt:32768:8:1$r49BxMYGNzPeikfB$16dbc4e09f594d7919811c7b659823f624333a8595a3d5f4d4e2de173534ccc964bb7d18c051ba879814dc1b1f237ac78a0fca218d2ecc8107097f8bc88a2d98', '2025-07-21 12:07:35', '0698312554', 'secretaire', 'developeur', 'Cameroun');
 
 --
 -- Indexes for dumped tables
@@ -271,7 +291,7 @@ ALTER TABLE `utilisateur`
 -- AUTO_INCREMENT for table `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `document`
@@ -283,7 +303,7 @@ ALTER TABLE `document`
 -- AUTO_INCREMENT for table `equipe`
 --
 ALTER TABLE `equipe`
-  MODIFY `IdEquipe` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `IdEquipe` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `message`
@@ -313,7 +333,7 @@ ALTER TABLE `taches`
 -- AUTO_INCREMENT for table `utilisateur`
 --
 ALTER TABLE `utilisateur`
-  MODIFY `Id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `Id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
@@ -345,7 +365,8 @@ ALTER TABLE `equipe_utilisateur`
 --
 ALTER TABLE `message`
   ADD CONSTRAINT `message_ibfk_1` FOREIGN KEY (`ID_projet`) REFERENCES `projet` (`ID_projet`) ON DELETE CASCADE,
-  ADD CONSTRAINT `message_ibfk_2` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
+  ADD CONSTRAINT `message_ibfk_2` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE,
+  ADD CONSTRAINT `message_ibfk_3` FOREIGN KEY (`Id_destinataire`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `notification`

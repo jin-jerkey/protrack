@@ -177,6 +177,7 @@ export default function UtilisateursAdminPage() {
       case 'administratif': return 'Directeur Prestataire';
       case 'secretaire': return 'Secretaire';
       case 'client': return 'Client';
+      case 'employe': return 'Employe';
       default: return role;
     }
   };
@@ -187,6 +188,7 @@ export default function UtilisateursAdminPage() {
       case 'administratif': return 'bg-blue-100 text-blue-800';
       case 'secretaire': return 'bg-green-100 text-green-800';
       case 'client': return 'bg-gray-100 text-gray-800';
+      case 'employe': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -309,6 +311,7 @@ export default function UtilisateursAdminPage() {
                 <option value="admin">Directeur General</option>
                 <option value="administratif">Directeur Prestataire</option>
                 <option value="secretaire">Secretaire</option>
+                <option value="employe">Employe</option>
               </select>
             </div>
             <div>
@@ -394,6 +397,7 @@ export default function UtilisateursAdminPage() {
                     <option value="administratif">Directeur Prestataire</option>
                     <option value="secretaire">Secretaire</option>
                     <option value="client">Client</option>
+                    <option value="employe">Employe</option>
                   </select>
                 </div>
                 <div className="flex items-center mt-6">

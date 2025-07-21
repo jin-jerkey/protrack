@@ -30,6 +30,13 @@ interface ProjetDetail {
   nbTachesTerminees: number;
 }
 
+// Ajouter cette interface pour les utilisateurs
+interface Utilisateur {
+  id: number;
+  nom: string;
+  role: string;
+}
+
 export default function DetailProjetPage() {
   const params = useParams();
   const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
@@ -41,12 +48,14 @@ export default function DetailProjetPage() {
   const [form, setForm] = useState({
     titre: '',
     description: '',
-    statut: 'a_faire',
+    statut: 'à_faire',
     priorite: 'moyenne',
     dateDebut: '',
     dateFin: '',
-    responsable: ''
+    dateFinReelle: '',
+    id_user_assigne: ''
   });
+  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
 
   // Récupérer les détails du projet
   const fetchProjetDetails = useCallback(async () => {
@@ -74,6 +83,7 @@ export default function DetailProjetPage() {
     }
   }, [params.id]);
 
+  // Dans useEffect, ajouter la récupération des utilisateurs
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
@@ -81,6 +91,25 @@ export default function DetailProjetPage() {
     }
     fetchProjetDetails();
     fetchTaches();
+
+    // Récupérer les utilisateurs
+    const fetchUtilisateurs = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/utilisateur/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUtilisateurs(data);
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    };
+    
+    fetchUtilisateurs();
   }, [params.id, fetchProjetDetails, fetchTaches]);
 
   // Gestion des tâches
@@ -107,11 +136,12 @@ export default function DetailProjetPage() {
         setForm({
           titre: '',
           description: '',
-          statut: 'a_faire',
+          statut: 'à_faire',
           priorite: 'moyenne',
           dateDebut: '',
           dateFin: '',
-          responsable: ''
+          dateFinReelle: '',
+          id_user_assigne: ''
         });
       }
     } catch (error) {
@@ -198,16 +228,26 @@ export default function DetailProjetPage() {
             <div className="bg-white rounded-lg shadow p-6 md:col-span-4">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold text-gray-700">Avancement global</h3>
-                <span className="text-lg font-bold text-gray-900">{projet.avancement}%</span>
+                <div className="text-lg">
+                  <span className="font-bold text-gray-900">{projet.avancement}%</span>
+                  <span className="text-gray-500 text-sm ml-2">
+                    ({projet.nbTachesTerminees}/{projet.nbTaches} tâches)
+                  </span>
+                </div>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div
                   className={`h-4 rounded-full transition-all duration-500 ${
-                    projet.avancement < 50 ? 'bg-red-500' :
-                    projet.avancement < 80 ? 'bg-yellow-500' : 'bg-green-500'
+                    projet.avancement < 30 ? 'bg-red-500' :
+                    projet.avancement < 70 ? 'bg-yellow-500' : 'bg-green-500'
                   }`}
                   style={{ width: `${projet.avancement}%` }}
                 />
+              </div>
+              <div className="mt-2 text-sm text-gray-600 flex justify-between">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
               </div>
             </div>
           </div>
@@ -305,8 +345,9 @@ export default function DetailProjetPage() {
                         statut: tache.statut,
                         dateDebut: tache.dateDebut || '',
                         dateFin: tache.dateFin || '',
-                        priorite: 'moyenne',
-                        responsable: ''
+                        priorite: tache.priorite || 'moyenne',
+                        dateFinReelle: tache.dateFinReelle || '',
+                        id_user_assigne: tache.responsable || ''
                       });
                       setEditId(tache.id);
                       setShowModal(true);
@@ -326,41 +367,146 @@ export default function DetailProjetPage() {
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg">
-              <form onSubmit={handleSubmit}>
-                {/* ... Formulaire similaire au modal de projet ... */}
-                {/* Example fields: */}
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Titre</label>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                {editId ? 'Modifier la tâche' : 'Nouvelle tâche'}
+              </h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Titre */}
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Titre de la tâche *
+                  </label>
                   <input
                     type="text"
+                    required
                     value={form.titre}
                     onChange={e => setForm({ ...form, titre: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                    required
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Description</label>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Description
+                  </label>
                   <textarea
                     value={form.description}
                     onChange={e => setForm({ ...form, description: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                    rows={3}
                   />
                 </div>
-                {/* Ajoutez d'autres champs ici selon vos besoins */}
-                <div className="flex justify-end">
+
+                {/* Statut et Priorité */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Statut
+                    </label>
+                    <select
+                      value={form.statut}
+                      onChange={e => setForm({ ...form, statut: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="à_faire">À faire</option>
+                      <option value="en_cours">En cours</option>
+                      <option value="terminée">Terminée</option>
+                      <option value="bloquée">Bloquée</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Priorité
+                    </label>
+                    <select
+                      value={form.priorite}
+                      onChange={e => setForm({ ...form, priorite: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="faible">Faible</option>
+                      <option value="moyenne">Moyenne</option>
+                      <option value="haute">Haute</option>
+                      <option value="critique">Critique</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Date de début
+                    </label>
+                    <input
+                      type="date"
+                      value={form.dateDebut}
+                      onChange={e => setForm({ ...form, dateDebut: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Date de fin prévue
+                    </label>
+                    <input
+                      type="date"
+                      value={form.dateFin}
+                      onChange={e => setForm({ ...form, dateFin: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Date de fin réelle (visible uniquement si statut = terminée) */}
+                {form.statut === 'terminée' && (
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Date de fin réelle
+                    </label>
+                    <input
+                      type="date"
+                      value={form.dateFinReelle}
+                      onChange={e => setForm({ ...form, dateFinReelle: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                )}
+
+                {/* Assignation utilisateur */}
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Assigner à
+                  </label>
+                  <select
+                    value={form.id_user_assigne}
+                    onChange={e => setForm({ ...form, id_user_assigne: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="">Sélectionner un responsable</option>
+                    {utilisateurs.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.nom} ({user.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Boutons */}
+                <div className="flex justify-end space-x-4 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="mr-4 px-4 py-2 rounded-lg border border-gray-300"
+                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="bg-red-700 text-white px-6 py-2 rounded-lg hover:bg-red-800 font-medium"
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                   >
-                    {editId ? 'Modifier' : 'Créer'}
+                    {editId ? 'Enregistrer' : 'Créer'}
                   </button>
                 </div>
               </form>

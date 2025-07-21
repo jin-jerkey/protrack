@@ -15,10 +15,23 @@ from routes.projet_route import projet_bp
 from routes.equipe_route import equipe_bp
 from routes.audit_route import audit_bp
 from routes.notification_route import notification_bp
+from routes.planification_route import planification_bp
+from routes.document_route import document_bp
+from routes.employe_route import employe_bp
+from routes.message_route import message_bp
 
 
 app = Flask(__name__)
-CORS(app)
+
+# Configuration CORS détaillée
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "User-Id"],  # Ajout de User-Id
+        "supports_credentials": True
+    }
+})
  
 # Configuration de la base de données
 db_config = {
@@ -57,6 +70,11 @@ app.register_blueprint(projet_bp)
 app.register_blueprint(equipe_bp)
 app.register_blueprint(audit_bp)
 app.register_blueprint(notification_bp)
+app.register_blueprint(planification_bp)
+app.register_blueprint(document_bp)
+app.register_blueprint(employe_bp)
+# Enregistrer le blueprint des messages
+app.register_blueprint(message_bp)
 
 if __name__ == '__main__':
     # Démarrer le serveur sur le port 5000

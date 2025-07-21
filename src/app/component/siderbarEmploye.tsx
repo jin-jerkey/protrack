@@ -3,22 +3,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, User, Home, Folder, ListChecks, FileText, MessageSquare, Bell } from 'lucide-react';
+import { LogOut, User, Home, FileText, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 // Nav items with icons
 const navItems = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
-  { name: 'Client', href: '/admin/clients', icon: User },
-  { name: 'Projets', href: '/admin/projets', icon: Folder },
-  { name: 'Tâches', href: '/admin/taches', icon: ListChecks },
-  { name: 'Documents', href: '/admin/documents', icon: FileText },
-  { name: 'Messages', href: '/admin/message', icon: MessageSquare },
-  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
-  { name: 'Utilisateur', href: '/admin/utilisateurs', icon: User },
+  { name: 'Dashboard', href: '/employe/dashboard', icon: Home },
+  { name: 'tache', href: '/employe/tache', icon: FileText },
+  { name: 'Messages', href: '/employe/message', icon: MessageSquare },
+  { name: 'Profile', href: '/employe/profile', icon: User }
 ];
 
-export default function Sidebar({ user }: { user?: { nom: string; email: string } }) {
+export default function SidebarEmploye({ user }: { user?: { nom: string; email: string } }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);

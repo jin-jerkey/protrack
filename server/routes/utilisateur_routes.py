@@ -132,3 +132,27 @@ def get_user_profile(id):
     finally:
         cursor.close()
         conn.close()
+
+# Ajouter cette nouvelle route pour récupérer les utilisateurs assignables
+@utilisateur_bp.route('/api/utilisateur/assignables', methods=['GET'])
+def get_utilisateurs_assignables():
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({'error': 'Erreur de connexion BDD'}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT 
+                Id_user as id,
+                Nom_user as nom,
+                Email as email,
+                Role as role
+            FROM utilisateur 
+            WHERE Role IN ('secretaire', 'administratif','employe')
+            ORDER BY Nom_user ASC
+        """)
+        users = cursor.fetchall()
+        return jsonify(users)
+    finally:
+        cursor.close()
+        conn.close()
