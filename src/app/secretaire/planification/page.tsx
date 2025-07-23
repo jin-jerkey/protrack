@@ -1,106 +1,86 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import SidebarSecretaire from '@/app/component/siderbarsecretaire';
 import { Plus, User } from 'lucide-react';
 
-interface Projet {
-  id: number;
-  nom: string;
-}
+// Données statiques pour les projets
+const PROJETS_DEMO = [
+  { id: 1, nom: "Projet Site Web E-commerce" },
+  { id: 2, nom: "Application Mobile" },
+  { id: 3, nom: "Refonte Interface" }
+];
 
-interface Tache {
-  id: number;
-  titre: string;
-  description?: string;
-  dateDebut?: string;
-  dateFin?: string;
-  responsable: string;
-  projet: string;
-  statut: string;
-  priorite: string;
-}
+// Données statiques pour les utilisateurs
+const UTILISATEURS_DEMO = [
+  { id: 1, nom: "Jean Dupont", role: "Développeur" },
+  { id: 2, nom: "Marie Martin", role: "Designer" },
+  { id: 3, nom: "Pierre Durant", role: "Chef de projet" }
+];
 
-interface Utilisateur {
-  id: number;
-  nom: string;
-  role: string;
-}
+// Données statiques pour les tâches
+const TACHES_DEMO = [
+  {
+    id: 1,
+    titre: "Maquette page d'accueil",
+    description: "Créer la maquette pour la nouvelle page d'accueil",
+    dateDebut: "2025-07-23",
+    dateFin: "2025-07-25",
+    responsable: "Marie Martin",
+    projet: "Refonte Interface",
+    statut: "en_cours",
+    priorite: "haute"
+  },
+  {
+    id: 2,
+    titre: "Développement API",
+    description: "Mettre en place l'API REST pour le projet",
+    dateDebut: "2025-07-23",
+    dateFin: "2025-07-26",
+    responsable: "Jean Dupont",
+    projet: "Application Mobile",
+    statut: "en_cours",
+    priorite: "moyenne"
+  },
+  {
+    id: 3,
+    titre: "Tests fonctionnels",
+    description: "Réaliser les tests fonctionnels du module panier",
+    dateDebut: "2025-07-23",
+    dateFin: "2025-07-24",
+    responsable: "Pierre Durant",
+    projet: "Projet Site Web E-commerce",
+    statut: "a_faire",
+    priorite: "basse"
+  }
+];
 
 export default function PlanificationPage() {
   const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
-  const [projets, setProjets] = useState<Projet[]>([]);
-  const [taches, setTaches] = useState<Tache[]>([]);
+  const [projets,  ] = useState(PROJETS_DEMO);
+  const [taches, setTaches] = useState(TACHES_DEMO);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showPlanningModal, setShowPlanningModal] = useState(false);
-  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
+  const [utilisateurs,  ] = useState(UTILISATEURS_DEMO);
   const [newTache, setNewTache] = useState({
     titre: '',
     description: '',
-    responsableIds: [] as number[], // Changer responsableId en responsableIds array
+    responsableIds: [] as number[],
     projetId: '',
     dateDebut: '',
     dateFin: '',
     priorite: 'moyenne'
   });
-  const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const userData = localStorage.getItem('user');
-      if (!userData) {
-        router.push('/');
-        return;
-      }
+    const userData = localStorage.getItem('user');
+    if (userData) {
       setUser(JSON.parse(userData));
-
-      try {
-        // Récupérer les projets
-        const resProjets = await fetch('http://localhost:5000/api/planification/projets', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`
-          }
-        });
-        if (resProjets.ok) {
-          const projetsData = await resProjets.json();
-          setProjets(projetsData);
-        }
-
-        // Récupérer les tâches
-        const resTaches = await fetch('http://localhost:5000/api/planification/taches', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include' // Ajoutez cette ligne
-        });
-        
-        if (resTaches.ok) {
-          const data = await resTaches.json();
-          setTaches(data);
-        }
-
-        // Récupérer tous les utilisateurs sans filtre
-        const resUsers = await fetch('http://localhost:5000/api/utilisateur', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`
-          }
-        });
-        if (resUsers.ok) {
-          const data = await resUsers.json();
-          setUtilisateurs(data); // Enlever le filtre
-        }
-      } catch (error) {
-        console.error('Erreur:', error);
-      }
-    };
-
-    fetchData();
-  }, [router]);
+    }
+  }, []);
 
   const tachesDuJour = taches.filter(tache => {
-    const dateDebut = new Date(tache.dateDebut as string);
+    const dateDebut = new Date(tache.dateDebut);
     return (
       dateDebut.getDate() === selectedDate.getDate() &&
       dateDebut.getMonth() === selectedDate.getMonth() &&
@@ -108,49 +88,32 @@ export default function PlanificationPage() {
     );
   });
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await fetch('http://localhost:5000/api/planification/creer-tache', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({
-          ...newTache,
-          // Pour chaque responsable, créer une tâche ou une assignation
-          responsables: newTache.responsableIds
-        })
-      });
+    // Créer une nouvelle tâche avec un ID unique
+    const nouvelleTache = {
+      id: taches.length + 1,
+      titre: newTache.titre,
+      description: newTache.description,
+      dateDebut: newTache.dateDebut,
+      dateFin: newTache.dateFin,
+      responsable: utilisateurs.find(u => u.id === newTache.responsableIds[0])?.nom || 'Non assigné',
+      projet: projets.find(p => p.id === Number(newTache.projetId))?.nom || '',
+      statut: 'a_faire',
+      priorite: newTache.priorite
+    };
 
-      if (res.ok) {
-        setShowPlanningModal(false);
-        setNewTache({
-          titre: '',
-          description: '',
-          responsableIds: [],
-          projetId: '',
-          dateDebut: '',
-          dateFin: '',
-          priorite: 'moyenne'
-        });
-        
-        // Rafraîchir les tâches
-        const resTaches = await fetch('http://localhost:5000/api/planification/taches', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`
-          }
-        });
-        if (resTaches.ok) {
-          const data = await resTaches.json();
-          setTaches(data);
-        }
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-    }
+    setTaches([...taches, nouvelleTache]);
+    setShowPlanningModal(false);
+    setNewTache({
+      titre: '',
+      description: '',
+      responsableIds: [],
+      projetId: '',
+      dateDebut: '',
+      dateFin: '',
+      priorite: 'moyenne'
+    });
   };
 
   return (

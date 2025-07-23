@@ -288,7 +288,7 @@ export default function ProjetsAdminPage() {
                 placeholder="Nom ou client..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full border border-gray-300  text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
             <div>
@@ -321,6 +321,7 @@ export default function ProjetsAdminPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projet</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avancement</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -341,6 +342,7 @@ export default function ProjetsAdminPage() {
                           <div className="text-xs text-gray-500">{p.description}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.client}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1.500.000 Fcfa</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             p.statut === 'en_cours' ? 'bg-blue-100 text-blue-800' :
@@ -412,8 +414,8 @@ export default function ProjetsAdminPage() {
 
         {/* Modal création/modification */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+          <div className="fixed inset-0   bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white text-gray-700 rounded-lg shadow-lg p-8 w-full max-w-lg relative">
               <button
                 className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
                 onClick={() => setShowModal(false)}
@@ -470,7 +472,19 @@ export default function ProjetsAdminPage() {
                   <input
                     type="date"
                     value={form.dateDebut}
-                    onChange={e => setForm({ ...form, dateDebut: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]} // Ajoute une date minimum
+                    onChange={e => {
+                      const selectedDate = new Date(e.target.value);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0); // Réinitialise l'heure à minuit
+
+                      if (selectedDate >= today) {
+                        setForm({ ...form, dateDebut: e.target.value });
+                      } else {
+                        alert('La date de début ne peut pas être antérieure à aujourd\'hui');
+                        setForm({ ...form, dateDebut: new Date().toISOString().split('T')[0] });
+                      }
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>

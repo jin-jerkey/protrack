@@ -19,6 +19,8 @@ from routes.planification_route import planification_bp
 from routes.document_route import document_bp
 from routes.employe_route import employe_bp
 from routes.message_route import message_bp
+from routes.dashboard_route import dashboard_bp
+
 
 
 app = Flask(__name__)
@@ -75,6 +77,7 @@ app.register_blueprint(document_bp)
 app.register_blueprint(employe_bp)
 # Enregistrer le blueprint des messages
 app.register_blueprint(message_bp)
+app.register_blueprint(dashboard_bp)
 
 if __name__ == '__main__':
     # Démarrer le serveur sur le port 5000

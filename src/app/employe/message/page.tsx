@@ -175,13 +175,13 @@ export default function MessagePage() {
                 placeholder="Rechercher dans les messages..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <select
               value={selectedProjet || '0'}
               onChange={(e) => setSelectedProjet(Number(e.target.value))}
-              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="border text-gray-700 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
             >
               <option value="0">Tous les projets</option>
               {projets.map(projet => (
@@ -227,7 +227,7 @@ export default function MessagePage() {
                   fetchProjectUsers(newProjectId);
                 }
               }}
-              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="border text-gray-700 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Sélectionner un projet</option>
@@ -239,7 +239,7 @@ export default function MessagePage() {
             <select
               value={selectedDestinataire || ''}
               onChange={(e) => setSelectedDestinataire(Number(e.target.value))}
-              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="border text-gray-700 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Sélectionner un destinataire</option>
@@ -255,7 +255,7 @@ export default function MessagePage() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Écrire un message..."
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border text-gray-700 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               required
             />
             <button

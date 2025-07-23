@@ -273,7 +273,7 @@ export default function UtilisateursAdminPage() {
                 name="nom" 
                 value={form.nom} 
                 onChange={e => setForm({ ...form, nom: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border border-gray-300 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                 required 
               />
             </div>
@@ -284,7 +284,7 @@ export default function UtilisateursAdminPage() {
                 name="email" 
                 value={form.email} 
                 onChange={e => setForm({ ...form, email: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border border-gray-700  text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                 required 
               />
             </div>
@@ -295,7 +295,7 @@ export default function UtilisateursAdminPage() {
                 name="telephone" 
                 value={form.telephone} 
                 onChange={e => setForm({ ...form, telephone: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
               />
             </div>
             <div>
@@ -304,7 +304,7 @@ export default function UtilisateursAdminPage() {
                 name="role" 
                 value={form.role} 
                 onChange={e => setForm({ ...form, role: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                 required
               >
                 <option value="client">Client</option>
@@ -321,7 +321,7 @@ export default function UtilisateursAdminPage() {
                 name="activite" 
                 value={form.activite} 
                 onChange={e => setForm({ ...form, activite: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
               />
             </div>
             <div>
@@ -331,7 +331,7 @@ export default function UtilisateursAdminPage() {
                 name="pays" 
                 value={form.pays} 
                 onChange={e => setForm({ ...form, pays: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border text-gray-700 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
               />
             </div>
             <div className="md:col-span-2">
@@ -343,7 +343,7 @@ export default function UtilisateursAdminPage() {
                 name="password" 
                 value={form.password} 
                 onChange={e => setForm({ ...form, password: e.target.value })} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full border text-gray-700 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                 required={!editId} 
               />
             </div>

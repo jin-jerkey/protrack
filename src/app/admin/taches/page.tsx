@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/component/siderbar';
-import { Search, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Search, AlertTriangle, RotateCcw, CheckCircle, Play } from 'lucide-react';
 
 interface Tache {
   id: number;
@@ -113,7 +113,7 @@ export default function TachesAdminPage() {
               placeholder="Rechercher une tâche, un projet ou un responsable..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -153,6 +153,29 @@ export default function TachesAdminPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
+                        {/* Bouton Terminer - visible si la tâche n'est pas terminée */}
+                        {tache.statut !== 'terminée' && tache.statut !== 'bloquée' && (
+                          <button
+                            onClick={() => updateTacheStatus(tache.id, 'terminée')}
+                            className="flex items-center px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                          >
+                            <CheckCircle size={16} className="mr-1" />
+                            Terminer
+                          </button>
+                        )}
+
+                        {/* Bouton Recommencer - visible uniquement si la tâche est terminée */}
+                        {tache.statut === 'terminée' && (
+                          <button
+                            onClick={() => updateTacheStatus(tache.id, 'en_cours')}
+                            className="flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          >
+                            <Play size={16} className="mr-1" />
+                            Recommencer
+                          </button>
+                        )}
+
+                        {/* Boutons Bloquer/À faire existants */}
                         {tache.statut !== 'bloquée' && (
                           <button
                             onClick={() => updateTacheStatus(tache.id, 'bloquée')}

@@ -147,7 +147,7 @@ export default function DashboardEmploye() {
 
         {/* Tâches récentes */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Tâches récentes</h2>
+          <h2 className="text-xl text-gray-700 font-semibold mb-4">Tâches récentes</h2>
           <div className="space-y-4">
             {taches.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Aucune tâche assignée</p>

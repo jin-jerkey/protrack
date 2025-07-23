@@ -1,8 +1,21 @@
 from flask import Blueprint, request, jsonify
 from db import create_db_connection
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
 
 employe_bp = Blueprint('employe', __name__)
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'pdf', 'zip'}
+
+# Créer le dossier uploads s'il n'existe pas
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @employe_bp.route('/api/employe/taches', methods=['GET'])
 def get_employe_taches():
@@ -79,19 +92,25 @@ def update_tache_statut(id):
     try:
         cursor = conn.cursor()
         
+        # Récupérer l'ancienne tâche pour vérification
+        cursor.execute("SELECT Statut FROM taches WHERE IdTache = %s", (id,))
+        ancien_statut = cursor.fetchone()[0]
+        
         # Mise à jour du statut
         cursor.execute("""
             UPDATE taches 
             SET Statut = %s,
                 DateFinReelle = CASE 
                     WHEN %s = 'terminée' THEN CURDATE()
-                    ELSE NULL 
+                    WHEN %s = 'en_cours' AND %s = 'terminée' THEN NULL
+                    ELSE DateFinReelle 
                 END
             WHERE IdTache = %s
-        """, (nouveau_statut, nouveau_statut, id))
+        """, (nouveau_statut, nouveau_statut, nouveau_statut, ancien_statut, id))
         
-        # Si la tâche est terminée, on ajoute la date de fin réelle
+        # Générer les notifications appropriées
         if nouveau_statut == 'terminée':
+            # Notification pour tâche terminée
             cursor.execute("""
                 INSERT INTO notification (Type, Sujet, Contenu, Id_user, ID_projet)
                 SELECT 
@@ -104,9 +123,26 @@ def update_tache_statut(id):
                 JOIN projet p ON t.ID_projet = p.ID_projet
                 WHERE t.IdTache = %s
             """, (id,))
+        elif nouveau_statut == 'en_cours' and ancien_statut == 'terminée':
+            # Notification pour tâche reprise
+            cursor.execute("""
+                INSERT INTO notification (Type, Sujet, Contenu, Id_user, ID_projet)
+                SELECT 
+                    'portal',
+                    'Tâche reprise',
+                    CONCAT('La tâche "', t.IntituleTache, '" a été remise en cours'),
+                    p.IdClient,
+                    t.ID_projet
+                FROM taches t
+                JOIN projet p ON t.ID_projet = p.ID_projet
+                WHERE t.IdTache = %s
+            """, (id,))
 
         conn.commit()
-        return jsonify({'message': 'Statut mis à jour avec succès'})
+        return jsonify({
+            'message': 'Statut mis à jour avec succès',
+            'nouveau_statut': nouveau_statut
+        })
 
     except Exception as e:
         conn.rollback()
@@ -244,6 +280,94 @@ def get_all_taches():
         return jsonify(taches)
 
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@employe_bp.route('/api/employe/tache/<int:tache_id>/document', methods=['POST'])
+def upload_document(tache_id):
+    """Upload un document pour une tâche"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier envoyé'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Aucun fichier sélectionné'}), 400
+        
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Type de fichier non autorisé'}), 400
+
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({'error': 'Erreur de connexion BDD'}), 500
+
+    try:
+        # Sécuriser le nom du fichier
+        filename = secure_filename(file.filename)
+        # Ajouter un timestamp pour éviter les doublons
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_")
+        filename = timestamp + filename
+        
+        # Chemin complet du fichier
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        
+        # Sauvegarder le fichier
+        file.save(filepath)
+        
+        cursor = conn.cursor()
+        
+        # Récupérer l'ID du projet associé à la tâche
+        cursor.execute("SELECT ID_projet FROM taches WHERE IdTache = %s", (tache_id,))
+        projet_id = cursor.fetchone()[0]
+        
+        # Insérer le document dans la base de données
+        cursor.execute("""
+            INSERT INTO document (
+                LibelleDocument, 
+                CheminFichier, 
+                Taille, 
+                Type, 
+                ID_projet, 
+                IdTache, 
+                Id_user
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            filename,
+            filepath,
+            os.path.getsize(filepath),
+            file.filename.rsplit('.', 1)[1].lower(),
+            projet_id,
+            tache_id,
+            request.args.get('userId')
+        ))
+        
+        # Ajouter une notification pour informer du document uploadé
+        cursor.execute("""
+            INSERT INTO notification (Type, Sujet, Contenu, Id_user, ID_projet)
+            SELECT 
+                'portal',
+                'Document ajouté',
+                CONCAT('Un document "', %s, '" a été ajouté à la tâche "', t.IntituleTache, '"'),
+                p.IdClient,
+                t.ID_projet
+            FROM taches t
+            JOIN projet p ON t.ID_projet = p.ID_projet
+            WHERE t.IdTache = %s
+        """, (file.filename, tache_id))
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Document uploadé avec succès',
+            'filename': filename
+        })
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({'error': str(e)}), 500
     finally:
         if cursor:

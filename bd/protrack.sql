@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 21, 2025 at 03:26 PM
+-- Generation Time: Jul 23, 2025 at 10:28 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -18,376 +18,640 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `protrack`
+-- Database: `samlearn`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `audit_log`
+-- Table structure for table `admin`
 --
 
-CREATE TABLE `audit_log` (
+CREATE TABLE `admin` (
   `id` int(11) NOT NULL,
-  `action` varchar(50) NOT NULL,
-  `table_affectee` varchar(50) DEFAULT NULL,
-  `id_element` int(11) DEFAULT NULL,
-  `details` text DEFAULT NULL,
-  `date_action` datetime DEFAULT current_timestamp(),
-  `utilisateur_id` int(11) NOT NULL
+  `nom` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `last_login` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `audit_log`
+-- Dumping data for table `admin`
 --
 
-INSERT INTO `audit_log` (`id`, `action`, `table_affectee`, `id_element`, `details`, `date_action`, `utilisateur_id`) VALUES
-(1, 'CONNEXION', '', NULL, 'Utilisateur connecté: stevejerkey@gmail.com', '2025-07-20 00:16:34', 1),
-(2, 'CONNEXION', '', NULL, 'Utilisateur connecté: jin@gmail.com', '2025-07-20 00:17:01', 2),
-(3, 'CONNEXION', '', NULL, 'Utilisateur connecté: stevejerkey@gmail.com', '2025-07-20 00:41:31', 1),
-(4, 'CONNEXION', '', NULL, 'Utilisateur connecté: jin@gmail.com', '2025-07-21 13:04:55', 2),
-(5, 'CONNEXION', '', NULL, 'Utilisateur connecté: papa@gmail.com', '2025-07-21 13:07:53', 4),
-(6, 'CONNEXION', '', NULL, 'Utilisateur connecté: papa@gmail.com', '2025-07-21 13:37:43', 4);
+INSERT INTO `admin` (`id`, `nom`, `email`, `password_hash`, `created_at`, `last_login`) VALUES
+(1, 'Admine', 'admin@samlearn.com', 'pbkdf2:sha256:1000000$pIJI7jQnMum6RV1g$50c224f44a605bb95bb5d094c3bc7e0b28dc4f43bc0f51d3b6f1f5cb995de6a6', '2025-05-23 10:27:02', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `document`
+-- Table structure for table `chatbot_conversations`
 --
 
-CREATE TABLE `document` (
-  `IdDocument` int(11) NOT NULL,
-  `LibelleDocument` varchar(150) NOT NULL,
-  `DatePartage` timestamp NOT NULL DEFAULT current_timestamp(),
-  `CheminFichier` text NOT NULL,
-  `Taille` bigint(20) DEFAULT NULL,
-  `Type` varchar(50) DEFAULT NULL,
-  `Visibility` enum('publique','privee') DEFAULT 'privee',
-  `ID_projet` int(11) DEFAULT NULL,
-  `IdTache` int(11) DEFAULT NULL,
-  `Id_user` int(11) DEFAULT NULL
+CREATE TABLE `chatbot_conversations` (
+  `id` int(11) NOT NULL,
+  `eleve_id` int(11) NOT NULL,
+  `cours_id` int(11) NOT NULL,
+  `question` text NOT NULL,
+  `reponse` text NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `equipe`
+-- Table structure for table `commentaires`
 --
 
-CREATE TABLE `equipe` (
-  `IdEquipe` int(11) NOT NULL,
-  `NomEquipe` varchar(100) NOT NULL,
-  `Description` text DEFAULT NULL
+CREATE TABLE `commentaires` (
+  `id` int(11) NOT NULL,
+  `eleve_id` int(11) NOT NULL,
+  `cours_id` int(11) NOT NULL,
+  `contenu` text NOT NULL,
+  `note` int(11) DEFAULT NULL CHECK (`note` >= 1 and `note` <= 5),
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `equipe`
+-- Dumping data for table `commentaires`
 --
 
-INSERT INTO `equipe` (`IdEquipe`, `NomEquipe`, `Description`) VALUES
-(1, 'developpeur', '');
+INSERT INTO `commentaires` (`id`, `eleve_id`, `cours_id`, `contenu`, `note`, `created_at`, `updated_at`) VALUES
+(1, 1, 3, 'j\'ai aimer ce cour vraiment', 5, '2025-04-17 10:51:57', '2025-04-17 10:51:57'),
+(2, 1, 3, 'hgfghgfgfgf', 5, '2025-04-17 18:50:07', '2025-04-17 18:50:07');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `equipe_utilisateur`
+-- Table structure for table `cours`
 --
 
-CREATE TABLE `equipe_utilisateur` (
-  `IdEquipe` int(11) NOT NULL,
-  `Id_user` int(11) NOT NULL
+CREATE TABLE `cours` (
+  `id` int(11) NOT NULL,
+  `formateur_id` int(11) NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `category` varchar(50) NOT NULL,
+  `difficulty_level` enum('débutant','intermédiaire','avancé') DEFAULT NULL,
+  `langue` varchar(20) DEFAULT 'Français',
+  `duree_estimee` int(11) DEFAULT NULL,
+  `prerequis` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`prerequis`)),
+  `mots_cles` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`mots_cles`)),
+  `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `equipe_utilisateur`
+-- Dumping data for table `cours`
 --
 
-INSERT INTO `equipe_utilisateur` (`IdEquipe`, `Id_user`) VALUES
-(1, 4);
+INSERT INTO `cours` (`id`, `formateur_id`, `titre`, `description`, `category`, `difficulty_level`, `langue`, `duree_estimee`, `prerequis`, `mots_cles`, `created_at`) VALUES
+(1, 1, 'la physique avec papa wemba', 'apprendre les bien fait de la physique ', 'Physique', '', 'Français', 2, '[\"base de physique\"]', '[\"physique\"]', '2025-03-21 14:38:17'),
+(2, 1, 'limite d\'une fonction', 'Apprendre facilement les limites ', 'Mathématiques', '', 'Français', 2, '[\"g\\u00e9ometrie\"]', '[\"mathematique\"]', '2025-03-21 15:47:55'),
+(3, 1, 'equation du segond degré facile avec mama sam', 'Apprendre à faire des équations comme un enfant du CM2', 'Mathématiques', '', 'Français', 320, '[\"alg\\u00e9bre\"]', '[\"mathematique\"]', '2025-03-24 10:20:05');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `message`
+-- Table structure for table `eleve`
 --
 
-CREATE TABLE `message` (
-  `IdMessage` int(11) NOT NULL,
-  `Contenu` text NOT NULL,
-  `DateMessage` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Type` enum('commentaire','notification','message') DEFAULT 'message',
-  `ID_projet` int(11) NOT NULL,
-  `Id_user` int(11) NOT NULL,
-  `Id_destinataire` int(11) DEFAULT NULL
+CREATE TABLE `eleve` (
+  `id` int(11) NOT NULL,
+  `nom` varchar(255) NOT NULL,
+  `prenom` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `last_login` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `niveau` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `eleve`
+--
+
+INSERT INTO `eleve` (`id`, `nom`, `prenom`, `email`, `password_hash`, `created_at`, `last_login`, `is_active`, `niveau`) VALUES
+(1, 'Jerkey', 'Steve', 'stevejerkey@gmail.com', 'scrypt:32768:8:1$1NZniHedpDYWYOqo$4b7f36526cee42c175e64d9e1a7e599138f6246e7dd9393eee1b1540321638211a4519cedf90238ff13f982501e049e94c3110ec76d2ec0c58237553dbc677e8', '2025-03-19 16:56:05', '2025-05-31 12:19:37', 1, '1ereC'),
+(8, 'abou', 'nadal', 'abou@gmail.com', 'scrypt:32768:8:1$ObzZE3MqFRKhC86x$7cd6e822beee988c34bcf77cb653ef4b739770ea2dac2bfdaca98c0393265908f35310e89c1a0b3d806641fdf8b3039eee66ea261e7705e460a9ebb63f16fb30', '2025-04-01 11:43:20', '2025-04-07 16:08:39', 1, '1ereD');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `notification`
+-- Table structure for table `eleve_cours`
 --
 
-CREATE TABLE `notification` (
-  `IDNotif` int(11) NOT NULL,
-  `Type` enum('email','portal') NOT NULL,
-  `Date_envoie` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Sujet` varchar(255) DEFAULT NULL,
-  `Contenu` text DEFAULT NULL,
-  `Lu` tinyint(1) DEFAULT 0,
-  `Id_user` int(11) NOT NULL,
-  `ID_projet` int(11) DEFAULT NULL
+CREATE TABLE `eleve_cours` (
+  `id` int(11) NOT NULL,
+  `eleve_id` int(11) NOT NULL,
+  `cours_id` int(11) NOT NULL,
+  `date_inscription` datetime DEFAULT current_timestamp(),
+  `est_termine` tinyint(1) DEFAULT 0,
+  `pourcentage_progression` float DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `eleve_cours`
+--
+
+INSERT INTO `eleve_cours` (`id`, `eleve_id`, `cours_id`, `date_inscription`, `est_termine`, `pourcentage_progression`) VALUES
+(1, 1, 1, '2025-03-25 14:09:57', 0, 0),
+(3, 1, 3, '2025-04-01 11:31:14', 1, 0),
+(4, 1, 2, '2025-04-01 11:40:43', 0, 0),
+(6, 8, 3, '2025-04-01 11:45:50', 0, 0);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `projet`
+-- Table structure for table `eleve_examen_resultats`
 --
 
-CREATE TABLE `projet` (
-  `ID_projet` int(11) NOT NULL,
-  `NomProjet` varchar(150) NOT NULL,
-  `Description` text DEFAULT NULL,
-  `DateCreationProjet` timestamp NOT NULL DEFAULT current_timestamp(),
-  `DateDebut` date DEFAULT NULL,
-  `DateFinPrevue` date DEFAULT NULL,
-  `Statut_projet` enum('en_cours','termine','en_pause') DEFAULT 'en_cours',
-  `Avancement` tinyint(3) UNSIGNED DEFAULT 0,
-  `IdClient` int(11) NOT NULL,
-  `IdEquipe` int(11) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+CREATE TABLE `eleve_examen_resultats` (
+  `id` int(11) NOT NULL,
+  `eleve_id` int(11) NOT NULL,
+  `examen_id` int(11) NOT NULL,
+  `date_passage` datetime DEFAULT current_timestamp(),
+  `score` float NOT NULL,
+  `est_reussi` tinyint(1) DEFAULT 0,
+  `tentative` int(11) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `eleve_examen_resultats`
+--
+
+INSERT INTO `eleve_examen_resultats` (`id`, `eleve_id`, `examen_id`, `date_passage`, `score`, `est_reussi`, `tentative`) VALUES
+(2, 1, 1, '2025-04-08 11:41:46', 0, 0, 1),
+(3, 1, 1, '2025-04-08 13:28:10', 100, 1, 1),
+(6, 1, 1, '2025-05-10 14:59:02', 100, 1, 1),
+(7, 1, 1, '2025-05-26 16:27:26', 100, 1, 1);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `taches`
+-- Table structure for table `eleve_module_progression`
 --
 
-CREATE TABLE `taches` (
-  `IdTache` int(11) NOT NULL,
-  `IntituleTache` varchar(150) NOT NULL,
-  `Description` text DEFAULT NULL,
-  `DateCreationTache` timestamp NOT NULL DEFAULT current_timestamp(),
-  `DateDebutPrevue` date DEFAULT NULL,
-  `DateFinPrevue` date DEFAULT NULL,
-  `DateFinReelle` date DEFAULT NULL,
-  `Statut` enum('à_faire','en_cours','terminée','bloquée') DEFAULT 'à_faire',
-  `Priorite` enum('faible','moyenne','haute','critique') DEFAULT 'moyenne',
-  `ID_projet` int(11) NOT NULL,
-  `Id_user_assigne` int(11) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+CREATE TABLE `eleve_module_progression` (
+  `id` int(11) NOT NULL,
+  `eleve_id` int(11) NOT NULL,
+  `module_id` int(11) NOT NULL,
+  `date_debut` datetime DEFAULT current_timestamp(),
+  `date_completion` datetime DEFAULT NULL,
+  `est_complete` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `eleve_module_progression`
+--
+
+INSERT INTO `eleve_module_progression` (`id`, `eleve_id`, `module_id`, `date_debut`, `date_completion`, `est_complete`) VALUES
+(2, 1, 1, '2025-04-08 11:06:14', '2025-05-26 16:27:33', 1),
+(3, 1, 2, '2025-04-08 11:06:21', '2025-05-26 16:27:36', 1),
+(4, 1, 10, '2025-05-24 11:10:17', '2025-05-26 16:26:42', 1),
+(5, 1, 11, '2025-05-24 11:10:19', '2025-05-26 16:26:44', 1),
+(6, 1, 18, '2025-05-24 11:10:28', '2025-05-26 16:26:46', 1),
+(7, 1, 4, '2025-05-26 16:27:11', '2025-05-26 16:27:11', 1),
+(8, 1, 14, '2025-05-26 16:27:12', '2025-05-26 16:27:12', 1),
+(9, 1, 15, '2025-05-26 16:27:14', '2025-05-26 16:27:14', 1),
+(10, 1, 16, '2025-05-26 16:27:17', '2025-05-26 16:27:17', 1),
+(11, 1, 17, '2025-05-26 16:27:19', '2025-05-26 16:27:19', 1);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `utilisateur`
+-- Table structure for table `eleve_quiz_reponses`
 --
 
-CREATE TABLE `utilisateur` (
-  `Id_user` int(11) NOT NULL,
-  `Nom_user` varchar(100) NOT NULL,
-  `Email` varchar(150) NOT NULL,
-  `Mot_passe` varchar(255) NOT NULL,
-  `Date_creation` timestamp NOT NULL DEFAULT current_timestamp(),
-  `phone_user` varchar(20) DEFAULT NULL,
-  `Role` enum('admin','client','administratif','secretaire','employe') NOT NULL,
-  `ActiviteClient` varchar(150) DEFAULT NULL,
-  `PaysClient` varchar(100) DEFAULT NULL
+CREATE TABLE `eleve_quiz_reponses` (
+  `id` int(11) NOT NULL,
+  `eleve_id` int(11) NOT NULL,
+  `quiz_id` int(11) NOT NULL,
+  `examen_resultat_id` int(11) NOT NULL,
+  `reponse_donnee` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `est_correcte` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `utilisateur`
+-- Dumping data for table `eleve_quiz_reponses`
 --
 
-INSERT INTO `utilisateur` (`Id_user`, `Nom_user`, `Email`, `Mot_passe`, `Date_creation`, `phone_user`, `Role`, `ActiviteClient`, `PaysClient`) VALUES
-(1, 'Steve Jerkey', 'stevejerkey@gmail.com', 'scrypt:32768:8:1$TbG7GZv8rcNknvvY$95adf3a42c9799c8f0d40d6ec1d2c8d9ae678c2ed4ad20cf8cef9a1615e3b75627eff4c9184a7609cfaf4d747e6c0837d184dd07dae3cbcc946fd68b56a6417d', '2025-07-11 15:29:23', '0698312554', 'client', 'banque', 'Cameroun'),
-(2, 'jin', 'jin@gmail.com', 'scrypt:32768:8:1$TbG7GZv8rcNknvvY$95adf3a42c9799c8f0d40d6ec1d2c8d9ae678c2ed4ad20cf8cef9a1615e3b75627eff4c9184a7609cfaf4d747e6c0837d184dd07dae3cbcc946fd68b56a6417d', '2025-07-15 12:26:23', '0698312554', 'admin', 'masseur', 'congo'),
-(3, 'steve jerkey zeufack', 'stevezeufack@gmail.com', 'scrypt:32768:8:1$LSKZJWZshyty8lfj$88fac72aa07315057d60ca9e4aaaa9f688139d5138644dcea3026f53124a25ba43faa99c191d347f0153ada84219ee201a6348ea6a399efebb2112888e3e8b39', '2025-07-15 17:11:27', '698312554', 'client', 'banque', 'Cameroun'),
-(4, 'papa', 'papa@gmail.com', 'scrypt:32768:8:1$r49BxMYGNzPeikfB$16dbc4e09f594d7919811c7b659823f624333a8595a3d5f4d4e2de173534ccc964bb7d18c051ba879814dc1b1f237ac78a0fca218d2ecc8107097f8bc88a2d98', '2025-07-21 12:07:35', '0698312554', 'secretaire', 'developeur', 'Cameroun');
+INSERT INTO `eleve_quiz_reponses` (`id`, `eleve_id`, `quiz_id`, `examen_resultat_id`, `reponse_donnee`, `est_correcte`) VALUES
+(1, 1, 1, 3, '[]', 1),
+(6, 1, 1, 6, '[]', 1),
+(7, 1, 1, 7, '[]', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `examens`
+--
+
+CREATE TABLE `examens` (
+  `id` int(11) NOT NULL,
+  `cours_id` int(11) NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `seuil_reussite` float DEFAULT 50
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `examens`
+--
+
+INSERT INTO `examens` (`id`, `cours_id`, `titre`, `seuil_reussite`) VALUES
+(1, 3, 'certifie toi', 50),
+(3, 1, 'cvcvcvcvcvcv', 50);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `formateur`
+--
+
+CREATE TABLE `formateur` (
+  `id` int(11) NOT NULL,
+  `nom` varchar(255) NOT NULL,
+  `prenom` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `last_login` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `bio` text DEFAULT NULL,
+  `specialites` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`specialites`)),
+  `qualifications` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`qualifications`)),
+  `taux_reussite` float DEFAULT NULL,
+  `methode_pedagogique` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `formateur`
+--
+
+INSERT INTO `formateur` (`id`, `nom`, `prenom`, `email`, `password_hash`, `created_at`, `last_login`, `is_active`, `bio`, `specialites`, `qualifications`, `taux_reussite`, `methode_pedagogique`) VALUES
+(1, 'jerkey', 'jin', 'jin@gmail.com', 'scrypt:32768:8:1$dRbWR2C8VmyDQ3nH$25b32b63f40b2257fc1826279d62a6e9c993ce88b973a16b93a2c176f6d587116c06033170af9aadc260fdf4b72452472b89d2b956361ace4f2206d0d60d78aa', '2025-03-21 11:50:15', '2025-05-31 12:18:48', 1, 'fdfdfdfdf', '[\"Chimie\", \"mathematique\", \"science\"]', '[\"bac\"]', NULL, 'Pratique');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `modules`
+--
+
+CREATE TABLE `modules` (
+  `id` int(11) NOT NULL,
+  `cours_id` int(11) NOT NULL,
+  `type` enum('document','texte','vidéo') NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `contenu` text NOT NULL,
+  `ordre` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `modules`
+--
+
+INSERT INTO `modules` (`id`, `cours_id`, `type`, `titre`, `contenu`, `ordre`) VALUES
+(1, 1, 'texte', 'demarage', 'tout apprendre sur les competene en physique', 1),
+(2, 1, 'document', 'tout a savoir', 'modele-statuts-ohada-sas-1.pdf', 1),
+(3, 1, 'vidéo', 'et de trois', 'Home_-_X_2.mp4', 1),
+(4, 3, 'document', 'boum', 'BIIC_CardLess_Specification_ICPS-Middle.pdf', 1),
+(10, 2, 'document', 'normale', '', 1),
+(11, 2, 'document', 'normale', '', 1),
+(14, 3, 'document', 'abou', 'BIIC_CardLess_Specification_ICPS-Middle.pdf', 1),
+(15, 3, 'vidéo', 'video', 'Home_-_X_2.mp4', 1),
+(16, 3, 'vidéo', 'azer', 'Actu_Foot_on_X-__UNE_PLAINTE_AUPRES_DE_LA_CHAMBRE_DENQUETE_DU_COMITE_DETHIQUE_DE_LA_FIFA_REQUIERT..._2_ANS_DINTERDICTION_DE_.mp4', 1),
+(17, 3, 'vidéo', 'yty', 'Home_-_X_3_1748010308.mp4', 1),
+(18, 2, 'vidéo', 'ga', 'Actu_Foot_on_X-__UNE_PLAINTE_AUPRES_DE_LA_CHAMBRE_DENQUETE_DU_COMITE_DETHIQUE_DE_LA_FIFA_REQUIERT..._2_ANS_DINTERDICTION_DE_.mp4', 1),
+(19, 2, 'vidéo', 'aza', 'VID-20250517-WA0011.mp4', 1),
+(20, 3, 'vidéo', 'sam', 'VID-20250517-WA0011.mp4', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `quizzes`
+--
+
+CREATE TABLE `quizzes` (
+  `id` int(11) NOT NULL,
+  `examen_id` int(11) NOT NULL,
+  `question` text NOT NULL,
+  `options` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`options`)),
+  `reponse_correcte` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'Stocke les index (0-based) des réponses correctes dans le tableau options',
+  `points` int(11) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `quizzes`
+--
+
+INSERT INTO `quizzes` (`id`, `examen_id`, `question`, `options`, `reponse_correcte`, `points`) VALUES
+(1, 1, 'qui est l\'autre ', '[\"boum\", \"baomm\", \"fdfd\", \"dfdfd\"]', '[]', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reponsecommentaires`
+--
+
+CREATE TABLE `reponsecommentaires` (
+  `id` int(11) NOT NULL,
+  `formateur_id` int(11) NOT NULL,
+  `commentaire_id` int(11) NOT NULL,
+  `contenu` text NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reponsecommentaires`
+--
+
+INSERT INTO `reponsecommentaires` (`id`, `formateur_id`, `commentaire_id`, `contenu`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'merci vraiment', '2025-04-17 12:46:59', '2025-04-17 12:46:59'),
+(2, 1, 1, 'fdfdfdfdfdfgfg', '2025-04-17 12:50:42', '2025-04-17 12:50:42'),
+(3, 1, 1, 'merci\n', '2025-04-17 13:00:54', '2025-04-17 13:00:54');
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `audit_log`
+-- Indexes for table `admin`
 --
-ALTER TABLE `audit_log`
+ALTER TABLE `admin`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `utilisateur_id` (`utilisateur_id`);
+  ADD UNIQUE KEY `email` (`email`);
 
 --
--- Indexes for table `document`
+-- Indexes for table `chatbot_conversations`
 --
-ALTER TABLE `document`
-  ADD PRIMARY KEY (`IdDocument`),
-  ADD KEY `ID_projet` (`ID_projet`),
-  ADD KEY `IdTache` (`IdTache`),
-  ADD KEY `Id_user` (`Id_user`);
+ALTER TABLE `chatbot_conversations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `eleve_id` (`eleve_id`),
+  ADD KEY `cours_id` (`cours_id`);
 
 --
--- Indexes for table `equipe`
+-- Indexes for table `commentaires`
 --
-ALTER TABLE `equipe`
-  ADD PRIMARY KEY (`IdEquipe`);
+ALTER TABLE `commentaires`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `eleve_id` (`eleve_id`),
+  ADD KEY `cours_id` (`cours_id`);
 
 --
--- Indexes for table `equipe_utilisateur`
+-- Indexes for table `cours`
 --
-ALTER TABLE `equipe_utilisateur`
-  ADD PRIMARY KEY (`IdEquipe`,`Id_user`),
-  ADD KEY `Id_user` (`Id_user`);
+ALTER TABLE `cours`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `formateur_id` (`formateur_id`);
 
 --
--- Indexes for table `message`
+-- Indexes for table `eleve`
 --
-ALTER TABLE `message`
-  ADD PRIMARY KEY (`IdMessage`),
-  ADD KEY `ID_projet` (`ID_projet`),
-  ADD KEY `Id_user` (`Id_user`),
-  ADD KEY `idx_message_type` (`Type`);
+ALTER TABLE `eleve`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nom` (`nom`),
+  ADD UNIQUE KEY `prenom` (`prenom`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_email` (`email`);
 
 --
--- Indexes for table `notification`
+-- Indexes for table `eleve_cours`
 --
-ALTER TABLE `notification`
-  ADD PRIMARY KEY (`IDNotif`),
-  ADD KEY `Id_user` (`Id_user`),
-  ADD KEY `ID_projet` (`ID_projet`);
+ALTER TABLE `eleve_cours`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_eleve_cours` (`eleve_id`,`cours_id`),
+  ADD KEY `cours_id` (`cours_id`);
 
 --
--- Indexes for table `projet`
+-- Indexes for table `eleve_examen_resultats`
 --
-ALTER TABLE `projet`
-  ADD PRIMARY KEY (`ID_projet`),
-  ADD KEY `IdClient` (`IdClient`),
-  ADD KEY `IdEquipe` (`IdEquipe`),
-  ADD KEY `idx_projet_statut` (`Statut_projet`);
+ALTER TABLE `eleve_examen_resultats`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `eleve_id` (`eleve_id`),
+  ADD KEY `examen_id` (`examen_id`);
 
 --
--- Indexes for table `taches`
+-- Indexes for table `eleve_module_progression`
 --
-ALTER TABLE `taches`
-  ADD PRIMARY KEY (`IdTache`),
-  ADD KEY `ID_projet` (`ID_projet`),
-  ADD KEY `Id_user_assigne` (`Id_user_assigne`),
-  ADD KEY `idx_taches_statut` (`Statut`),
-  ADD KEY `idx_taches_priorite` (`Priorite`);
+ALTER TABLE `eleve_module_progression`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_eleve_module` (`eleve_id`,`module_id`),
+  ADD KEY `module_id` (`module_id`);
 
 --
--- Indexes for table `utilisateur`
+-- Indexes for table `eleve_quiz_reponses`
 --
-ALTER TABLE `utilisateur`
-  ADD PRIMARY KEY (`Id_user`),
-  ADD UNIQUE KEY `Email` (`Email`);
+ALTER TABLE `eleve_quiz_reponses`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `eleve_id` (`eleve_id`),
+  ADD KEY `quiz_id` (`quiz_id`),
+  ADD KEY `examen_resultat_id` (`examen_resultat_id`);
+
+--
+-- Indexes for table `examens`
+--
+ALTER TABLE `examens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `cours_id` (`cours_id`);
+
+--
+-- Indexes for table `formateur`
+--
+ALTER TABLE `formateur`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_email` (`email`);
+
+--
+-- Indexes for table `modules`
+--
+ALTER TABLE `modules`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `cours_id` (`cours_id`);
+
+--
+-- Indexes for table `quizzes`
+--
+ALTER TABLE `quizzes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `examen_id` (`examen_id`);
+
+--
+-- Indexes for table `reponsecommentaires`
+--
+ALTER TABLE `reponsecommentaires`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `formateur_id` (`formateur_id`),
+  ADD KEY `commentaire_id` (`commentaire_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT for table `audit_log`
+-- AUTO_INCREMENT for table `admin`
 --
-ALTER TABLE `audit_log`
+ALTER TABLE `admin`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `chatbot_conversations`
+--
+ALTER TABLE `chatbot_conversations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `commentaires`
+--
+ALTER TABLE `commentaires`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `cours`
+--
+ALTER TABLE `cours`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `eleve`
+--
+ALTER TABLE `eleve`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `eleve_cours`
+--
+ALTER TABLE `eleve_cours`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT for table `document`
+-- AUTO_INCREMENT for table `eleve_examen_resultats`
 --
-ALTER TABLE `document`
-  MODIFY `IdDocument` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `eleve_examen_resultats`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT for table `equipe`
+-- AUTO_INCREMENT for table `eleve_module_progression`
 --
-ALTER TABLE `equipe`
-  MODIFY `IdEquipe` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+ALTER TABLE `eleve_module_progression`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT for table `message`
+-- AUTO_INCREMENT for table `eleve_quiz_reponses`
 --
-ALTER TABLE `message`
-  MODIFY `IdMessage` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `eleve_quiz_reponses`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT for table `notification`
+-- AUTO_INCREMENT for table `examens`
 --
-ALTER TABLE `notification`
-  MODIFY `IDNotif` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `examens`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `projet`
+-- AUTO_INCREMENT for table `formateur`
 --
-ALTER TABLE `projet`
-  MODIFY `ID_projet` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `formateur`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT for table `taches`
+-- AUTO_INCREMENT for table `modules`
 --
-ALTER TABLE `taches`
-  MODIFY `IdTache` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `modules`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
--- AUTO_INCREMENT for table `utilisateur`
+-- AUTO_INCREMENT for table `quizzes`
 --
-ALTER TABLE `utilisateur`
-  MODIFY `Id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+ALTER TABLE `quizzes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `reponsecommentaires`
+--
+ALTER TABLE `reponsecommentaires`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `audit_log`
+-- Constraints for table `chatbot_conversations`
 --
-ALTER TABLE `audit_log`
-  ADD CONSTRAINT `audit_log_ibfk_1` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
+ALTER TABLE `chatbot_conversations`
+  ADD CONSTRAINT `chatbot_conversations_ibfk_1` FOREIGN KEY (`eleve_id`) REFERENCES `eleve` (`id`),
+  ADD CONSTRAINT `chatbot_conversations_ibfk_2` FOREIGN KEY (`cours_id`) REFERENCES `cours` (`id`);
 
 --
--- Constraints for table `document`
+-- Constraints for table `commentaires`
 --
-ALTER TABLE `document`
-  ADD CONSTRAINT `document_ibfk_1` FOREIGN KEY (`ID_projet`) REFERENCES `projet` (`ID_projet`) ON DELETE CASCADE,
-  ADD CONSTRAINT `document_ibfk_2` FOREIGN KEY (`IdTache`) REFERENCES `taches` (`IdTache`) ON DELETE SET NULL,
-  ADD CONSTRAINT `document_ibfk_3` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
+ALTER TABLE `commentaires`
+  ADD CONSTRAINT `commentaires_ibfk_1` FOREIGN KEY (`eleve_id`) REFERENCES `eleve` (`id`),
+  ADD CONSTRAINT `commentaires_ibfk_2` FOREIGN KEY (`cours_id`) REFERENCES `cours` (`id`);
 
 --
--- Constraints for table `equipe_utilisateur`
+-- Constraints for table `cours`
 --
-ALTER TABLE `equipe_utilisateur`
-  ADD CONSTRAINT `equipe_utilisateur_ibfk_1` FOREIGN KEY (`IdEquipe`) REFERENCES `equipe` (`IdEquipe`) ON DELETE CASCADE,
-  ADD CONSTRAINT `equipe_utilisateur_ibfk_2` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
+ALTER TABLE `cours`
+  ADD CONSTRAINT `cours_ibfk_1` FOREIGN KEY (`formateur_id`) REFERENCES `formateur` (`id`);
 
 --
--- Constraints for table `message`
+-- Constraints for table `eleve_cours`
 --
-ALTER TABLE `message`
-  ADD CONSTRAINT `message_ibfk_1` FOREIGN KEY (`ID_projet`) REFERENCES `projet` (`ID_projet`) ON DELETE CASCADE,
-  ADD CONSTRAINT `message_ibfk_2` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE,
-  ADD CONSTRAINT `message_ibfk_3` FOREIGN KEY (`Id_destinataire`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE;
+ALTER TABLE `eleve_cours`
+  ADD CONSTRAINT `eleve_cours_ibfk_1` FOREIGN KEY (`eleve_id`) REFERENCES `eleve` (`id`),
+  ADD CONSTRAINT `eleve_cours_ibfk_2` FOREIGN KEY (`cours_id`) REFERENCES `cours` (`id`);
 
 --
--- Constraints for table `notification`
+-- Constraints for table `eleve_examen_resultats`
 --
-ALTER TABLE `notification`
-  ADD CONSTRAINT `notification_ibfk_1` FOREIGN KEY (`Id_user`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE,
-  ADD CONSTRAINT `notification_ibfk_2` FOREIGN KEY (`ID_projet`) REFERENCES `projet` (`ID_projet`) ON DELETE SET NULL;
+ALTER TABLE `eleve_examen_resultats`
+  ADD CONSTRAINT `eleve_examen_resultats_ibfk_1` FOREIGN KEY (`eleve_id`) REFERENCES `eleve` (`id`),
+  ADD CONSTRAINT `eleve_examen_resultats_ibfk_2` FOREIGN KEY (`examen_id`) REFERENCES `examens` (`id`);
 
 --
--- Constraints for table `projet`
+-- Constraints for table `eleve_module_progression`
 --
-ALTER TABLE `projet`
-  ADD CONSTRAINT `projet_ibfk_1` FOREIGN KEY (`IdClient`) REFERENCES `utilisateur` (`Id_user`) ON DELETE CASCADE,
-  ADD CONSTRAINT `projet_ibfk_2` FOREIGN KEY (`IdEquipe`) REFERENCES `equipe` (`IdEquipe`) ON DELETE SET NULL;
+ALTER TABLE `eleve_module_progression`
+  ADD CONSTRAINT `eleve_module_progression_ibfk_1` FOREIGN KEY (`eleve_id`) REFERENCES `eleve` (`id`),
+  ADD CONSTRAINT `eleve_module_progression_ibfk_2` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`);
 
 --
--- Constraints for table `taches`
+-- Constraints for table `eleve_quiz_reponses`
 --
-ALTER TABLE `taches`
-  ADD CONSTRAINT `taches_ibfk_1` FOREIGN KEY (`ID_projet`) REFERENCES `projet` (`ID_projet`) ON DELETE CASCADE,
-  ADD CONSTRAINT `taches_ibfk_2` FOREIGN KEY (`Id_user_assigne`) REFERENCES `utilisateur` (`Id_user`) ON DELETE SET NULL;
+ALTER TABLE `eleve_quiz_reponses`
+  ADD CONSTRAINT `eleve_quiz_reponses_ibfk_1` FOREIGN KEY (`eleve_id`) REFERENCES `eleve` (`id`),
+  ADD CONSTRAINT `eleve_quiz_reponses_ibfk_2` FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`),
+  ADD CONSTRAINT `eleve_quiz_reponses_ibfk_3` FOREIGN KEY (`examen_resultat_id`) REFERENCES `eleve_examen_resultats` (`id`);
+
+--
+-- Constraints for table `examens`
+--
+ALTER TABLE `examens`
+  ADD CONSTRAINT `examens_ibfk_1` FOREIGN KEY (`cours_id`) REFERENCES `cours` (`id`);
+
+--
+-- Constraints for table `modules`
+--
+ALTER TABLE `modules`
+  ADD CONSTRAINT `modules_ibfk_1` FOREIGN KEY (`cours_id`) REFERENCES `cours` (`id`);
+
+--
+-- Constraints for table `quizzes`
+--
+ALTER TABLE `quizzes`
+  ADD CONSTRAINT `quizzes_ibfk_1` FOREIGN KEY (`examen_id`) REFERENCES `examens` (`id`);
+
+--
+-- Constraints for table `reponsecommentaires`
+--
+ALTER TABLE `reponsecommentaires`
+  ADD CONSTRAINT `reponsecommentaires_ibfk_1` FOREIGN KEY (`formateur_id`) REFERENCES `formateur` (`id`),
+  ADD CONSTRAINT `reponsecommentaires_ibfk_2` FOREIGN KEY (`commentaire_id`) REFERENCES `commentaires` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

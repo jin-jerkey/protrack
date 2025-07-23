@@ -30,6 +30,13 @@ interface ProjectUser {
   email: string;
 }
 
+interface AuthorizedUser {
+  id: number;
+  nom: string;
+  email: string;
+  role: string;
+}
+
 export default function MessagePage() {
   const [user, setUser] = useState<{ id: number; nom: string; email: string }>({ id: 0, nom: '', email: '' });
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,8 +44,9 @@ export default function MessagePage() {
   const [newMessage, setNewMessage] = useState('');
   const [selectedProjet, setSelectedProjet] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [projectUsers, setProjectUsers] = useState<ProjectUser[]>([]);
+  // const [projectUsers, setProjectUsers] = useState<ProjectUser[]>([]);
   const [selectedDestinataire, setSelectedDestinataire] = useState<number>(0);
+  const [authorizedUsers, setAuthorizedUsers] = useState<AuthorizedUser[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     nonLus: 0
@@ -65,22 +73,28 @@ export default function MessagePage() {
 
   const fetchProjets = useCallback(async (userId: number) => {
     try {
+      console.log('Fetching projects...'); // Debug
       const res = await fetch(`http://localhost:5000/api/messages/projets?userId=${userId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         }
       });
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('Projects received:', data); // Debug
         setProjets(data);
-        if (!selectedProjet && data.length > 0) {
-          setSelectedProjet(data[0].id);
-        }
+        // Ne pas automatiquement sélectionner le premier projet
+        // if (!selectedProjet && data.length > 0) {
+        //   setSelectedProjet(data[0].id);
+        // }
+      } else {
+        console.error('Erreur lors de la récupération des projets:', res.status);
       }
     } catch (error) {
       console.error('Erreur:', error);
     }
-  }, [selectedProjet]);
+  }, []); // Retirer selectedProjet des dépendances
 
   const fetchProjectUsers = useCallback(async (projectId: number) => {
     try {
@@ -91,9 +105,8 @@ export default function MessagePage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setProjectUsers(data);
         // Ne pas réinitialiser le destinataire si c'est un utilisateur valide
-        if (!data.some(u => u.id === selectedDestinataire)) {
+        if (!data.some((u: ProjectUser) => u.id === selectedDestinataire)) {
           setSelectedDestinataire(0);
         }
       }
@@ -101,6 +114,25 @@ export default function MessagePage() {
       console.error('Erreur:', error);
     }
   }, [selectedDestinataire]);
+
+  const fetchAuthorizedUsers = useCallback(async (userId: number, role: string) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/messages/authorized-users?userId=${userId}&role=${role}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setAuthorizedUsers(data);
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -113,10 +145,11 @@ export default function MessagePage() {
 
     fetchMessages(parsedUser.id);
     fetchProjets(parsedUser.id);
+    fetchAuthorizedUsers(parsedUser.id, parsedUser.role);
 
     const interval = setInterval(() => fetchMessages(parsedUser.id), 30000);
     return () => clearInterval(interval);
-  }, [router, fetchMessages, fetchProjets]);
+  }, [router, fetchMessages, fetchProjets, fetchAuthorizedUsers]);
 
   useEffect(() => {
     if (selectedProjet) {
@@ -130,6 +163,12 @@ export default function MessagePage() {
       nonLus: messages.filter(m => !m.lu && m.destinataireId === user.id).length
     });
   }, [messages, user.id]);
+
+  // Ajouter ce useEffect pour le debug
+  useEffect(() => {
+    console.log('Projets mis à jour:', projets);
+    console.log('Projet sélectionné:', selectedProjet);
+  }, [projets, selectedProjet]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,20 +242,29 @@ export default function MessagePage() {
                 placeholder="Rechercher dans les messages..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-700 text-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
+            {/* Select des projets */}
             <select
-              value={selectedProjet || '0'}
-              onChange={(e) => setSelectedProjet(Number(e.target.value))}
-              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              value={selectedProjet}
+              onChange={(e) => {
+                console.log('Nouveau projet sélectionné:', e.target.value); // Debug
+                setSelectedProjet(Number(e.target.value));
+              }}
+              className="border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              required
             >
-              <option value="0">Tous les projets</option>
-              {projets.map(projet => (
-                <option key={projet.id} value={projet.id}>
-                  {projet.nom}
-                </option>
-              ))}
+              <option value="">Sélectionner un projet</option>
+              {projets.length > 0 ? (
+                projets.map(projet => (
+                  <option key={projet.id} value={projet.id}>
+                    {projet.nom}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Aucun projet disponible</option>
+              )}
             </select>
           </div>
 
@@ -235,7 +283,7 @@ export default function MessagePage() {
                   <div>
                     <div className="font-medium text-gray-900">{msg.envoyeurNom}</div>
                     {msg.destinataireNom && (
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-700">
                         à {msg.destinataireNom}
                       </div>
                     )}
@@ -264,7 +312,7 @@ export default function MessagePage() {
                   fetchProjectUsers(newProjectId);
                 }
               }}
-              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Sélectionner un projet</option>
@@ -276,15 +324,31 @@ export default function MessagePage() {
             <select
               value={selectedDestinataire || ''}
               onChange={(e) => setSelectedDestinataire(Number(e.target.value))}
-              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 min-w-[200px]"
               required
             >
               <option value="">Sélectionner un destinataire</option>
-              {projectUsers
-                .filter(u => u.id !== user.id)
-                .map(user => (
-                  <option key={user.id} value={user.id}>{user.nom}</option>
-              ))}
+              <optgroup label="Administrateurs">
+                {authorizedUsers
+                  .filter(u => u.role === 'admin')
+                  .map(user => (
+                    <option key={user.id} value={user.id}>{user.nom}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Secrétaires">
+                {authorizedUsers
+                  .filter(u => u.role === 'secretaire')
+                  .map(user => (
+                    <option key={user.id} value={user.id}>{user.nom}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Employés">
+                {authorizedUsers
+                  .filter(u => u.role === 'employe')
+                  .map(user => (
+                    <option key={user.id} value={user.id}>{user.nom}</option>
+                ))}
+              </optgroup>
             </select>
 
             <input
@@ -292,7 +356,7 @@ export default function MessagePage() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Écrire un message..."
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-gray-700 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               required
             />
             <button

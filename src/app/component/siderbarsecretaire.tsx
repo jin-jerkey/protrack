@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, User, Home, Calendar, FileText, Bell, ClipboardList } from 'lucide-react';
+import { LogOut, User, Home, Calendar, FileText, Bell } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
@@ -11,7 +11,6 @@ const navItems = [
   { name: 'Équipe', href: '/secretaire/equipes', icon: User },
   { name: 'Planification', href: '/secretaire/planification', icon: Calendar },
   { name: 'Documents', href: '/secretaire/documents', icon: FileText },
-  { name: 'Tâches', href: '/secretaire/taches', icon: ClipboardList },
   { name: 'Notifications', href: '/secretaire/notifications', icon: Bell },
   { name: 'Profile', href: '/secretaire/profile', icon: User },
   { name: 'Message', href: '/secretaire/message', icon: User }

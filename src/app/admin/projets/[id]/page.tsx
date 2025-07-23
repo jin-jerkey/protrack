@@ -262,7 +262,7 @@ export default function DetailProjetPage() {
                 placeholder="Rechercher une tâche..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full border border-gray-300 text-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
             <button
@@ -365,7 +365,7 @@ export default function DetailProjetPage() {
 
         {/* Modal d'ajout/modification de tâche */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="fixed inset-0 border-gray-900 shadow-gray-900 text-gray-700  bg-opacity-10 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">
                 {editId ? 'Modifier la tâche' : 'Nouvelle tâche'}

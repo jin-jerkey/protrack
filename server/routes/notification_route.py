@@ -51,3 +51,21 @@ def create_notification():
     finally:
         cursor.close()
         conn.close()
+
+# Ajouter cette nouvelle route
+@notification_bp.route('/api/notification/<int:notification_id>/read', methods=['PUT'])
+def mark_notification_as_read(notification_id):
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({"error": "Erreur de connexion"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE notification SET Lu = 1 WHERE IDNotif = %s",
+            (notification_id,)
+        )
+        conn.commit()
+        return jsonify({"message": "Notification marquée comme lue"})
+    finally:
+        cursor.close()
+        conn.close()

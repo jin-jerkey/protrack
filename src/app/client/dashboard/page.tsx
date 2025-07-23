@@ -1,70 +1,72 @@
 'use client';
 
- import SidebarClient from '@/app/component/siderbarclient';
+import SidebarClient from '@/app/component/siderbarclient';
 import { useEffect, useState } from 'react';
+import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+interface DashboardStats {
+  projetsActifs: number;
+  totalProjets: number;
+  tachesEnCours: number;
+  documents: number;
+}
+
+interface ChartData {
+  avancementProjets: {
+    labels: string[];
+    data: number[];
+  };
+  distributionTaches: {
+    labels: string[];
+    data: number[];
+  };
+}
+
+
+interface Document {
+  id: string;
+  libelle: string;
+  projet_nom: string;
+  url: string;
+  date_partage: string;
+}
 
 export default function DashboardPage() {
-  // Récupération des infos utilisateur depuis le localStorage
-  const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
-  interface Projet {
-    id: string;
-    nom: string;
-    description: string;
-    statut: 'termine' | 'en_pause' | 'en_cours' | string;
-    avancement: number;
-    // Ajoutez d'autres propriétés si nécessaire
-  }
-  const [projets, setProjets] = useState<Projet[]>([]);
-  interface Livrable {
-    id: string;
-    libelle: string;
-    projet_nom: string;
-    url: string;
-    // Ajoutez d'autres propriétés si nécessaire
-  }
-  const [livrables, setLivrables] = useState<Livrable[]>([]);
-  interface Notification {
-    id: string;
-    message: string;
-    date: string;
-    // Ajoutez d'autres propriétés si nécessaire
-  }
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  interface Message {
-    id: string;
-    auteur: string;
-    contenu: string;
-    date: string;
-    // Ajoutez d'autres propriétés si nécessaire
-  }
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [user, setUser] = useState<{ id: string; nom: string; email: string }>({ id: '', nom: '', email: '' });
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
+  // const [projetsRecents, setProjetsRecents] = useState<Projet[]>([]);
+  const [documentsRecents, setDocumentsRecents] = useState<Document[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
-      if (userData) setUser(JSON.parse(userData));
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        
+        // Charger les données du dashboard
+        Promise.all([
+          fetch(`http://localhost:5000/api/client/dashboard/stats?client_id=${parsedUser.id}`),
+          fetch(`http://localhost:5000/api/client/dashboard/chart-data?client_id=${parsedUser.id}`),
+          // fetch(`/api/client/projets/recents?client_id=${parsedUser.id}`), // Removed unused fetch
+          fetch(`/api/client/documents/recents?client_id=${parsedUser.id}`)
+        ]).then(async ([statsRes, chartDataRes, documentsRes]) => {
+          const stats = await statsRes.json();
+          const chartData = await chartDataRes.json();
+          const documents = await documentsRes.json();
+
+          setStats(stats);
+          setChartData(chartData);
+          setDocumentsRecents(documents);
+        }).catch(error => {
+          console.error('Erreur lors du chargement des données:', error);
+        });
+      }
     }
-    // Appels API fictifs, à remplacer par vos endpoints réels
-    // Récupérer les projets du client
-    fetch('/api/client/projets')
-      .then(res => res.json())
-      .then(data => setProjets(data))
-      .catch(() => setProjets([]));
-    // Récupérer les derniers livrables
-    fetch('/api/client/livrables')
-      .then(res => res.json())
-      .then(data => setLivrables(data))
-      .catch(() => setLivrables([]));
-    // Récupérer les notifications
-    fetch('/api/client/notifications')
-      .then(res => res.json())
-      .then(data => setNotifications(data))
-      .catch(() => setNotifications([]));
-    // Récupérer les messages
-    fetch('/api/client/messages')
-      .then(res => res.json())
-      .then(data => setMessages(data))
-      .catch(() => setMessages([]));
   }, []);
 
   return (
@@ -72,94 +74,96 @@ export default function DashboardPage() {
       <SidebarClient user={user} />
       <main className="flex-1 ml-72 md:ml-60 sm:ml-20 p-8 bg-gray-50 min-h-screen">
         <h1 className="text-4xl font-extrabold mb-8 text-center text-red-700 drop-shadow-lg bg-white py-4 rounded-lg shadow">
-          Dashboard
+          Tableau de bord Client
         </h1>
 
-        {/* Liste des projets */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-red-800">Vos projets</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projets.length === 0 ? (
-              <div className="text-gray-500">Aucun projet pour le moment.</div>
-            ) : (
-              projets.map(projet => (
-                <div key={projet.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-red-700">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-gray-800">{projet.nom}</span>
-                    <span className={`px-2 py-1 rounded text-xs ${projet.statut === 'termine' ? 'bg-green-100 text-green-700' : projet.statut === 'en_pause' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                      {projet.statut}
-                    </span>
-                  </div>
-                  <div className="mb-2 text-gray-600">{projet.description}</div>
-                  <div className="mb-2">
-                    <span className="text-sm text-gray-500">Avancement :</span>
-                    <div className="w-full bg-gray-200 rounded-full h-3 mt-1">
-                      <div className="bg-red-700 h-3 rounded-full" style={{ width: `${projet.avancement}%` }}></div>
-                    </div>
-                    <span className="text-xs text-gray-700">{projet.avancement}%</span>
-                  </div>
-                  <a href={`/client/projets/${projet.id}`} className="text-red-700 hover:underline text-sm font-medium">Voir le détail</a>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
+        {/* KPIs */}
+        {stats && (
+          <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
+              <h3 className="text-gray-600 text-sm">Projets actifs</h3>
+              <p className="text-2xl font-bold text-red-700 mt-2">{stats.projetsActifs}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
+              <h3 className="text-gray-600 text-sm">Total projets</h3>
+              <p className="text-2xl font-bold text-red-700 mt-2">{stats.totalProjets}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
+              <h3 className="text-gray-600 text-sm">Tâches en cours</h3>
+              <p className="text-2xl font-bold text-red-700 mt-2">{stats.tachesEnCours}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
+              <h3 className="text-gray-600 text-sm">Documents partagés</h3>
+              <p className="text-2xl font-bold text-red-700 mt-2">{stats.documents}</p>
+            </div>
+          </section>
+        )}
 
-        {/* Derniers livrables */}
+        {/* Graphiques */}
+        {chartData && (
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Avancement des projets</h3>
+              <Bar 
+                data={{
+                  labels: chartData.avancementProjets.labels,
+                  datasets: [{
+                    label: 'Avancement (%)',
+                    data: chartData.avancementProjets.data,
+                    backgroundColor: '#EF4444'
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' as const }
+                  }
+                }}
+              />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Distribution des tâches</h3>
+              <Pie 
+                data={{
+                  labels: chartData.distributionTaches.labels,
+                  datasets: [{
+                    data: chartData.distributionTaches.data,
+                    backgroundColor: ['#EF4444', '#10B981', '#F59E0B', '#6366F1']
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' as const }
+                  }
+                }}
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Documents récents */}
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-red-800">Derniers livrables</h2>
+          <h2 className="text-xl font-semibold mb-4 text-red-800">Documents récents</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {livrables.length === 0 ? (
-              <div className="text-gray-500">Aucun livrable disponible.</div>
+            {documentsRecents.length === 0 ? (
+              <div className="text-gray-500">Aucun document disponible.</div>
             ) : (
-              livrables.map(livrable => (
-                <div key={livrable.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-red-700 flex justify-between items-center">
+              documentsRecents.map(doc => (
+                <div key={doc.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-red-700 flex justify-between items-center">
                   <div>
-                    <div className="font-bold text-gray-800">{livrable.libelle}</div>
-                    <div className="text-xs text-gray-500">Projet : {livrable.projet_nom}</div>
+                    <div className="font-bold text-gray-800">{doc.libelle}</div>
+                    <div className="text-xs text-gray-500">
+                      Projet : {doc.projet_nom}
+                      <span className="ml-2">{new Date(doc.date_partage).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                  <a href={livrable.url} download className="bg-red-700 text-white px-3 py-1 rounded hover:bg-red-800 text-xs">Télécharger</a>
+                  <a href={doc.url} download className="bg-red-700 text-white px-3 py-1 rounded hover:bg-red-800 text-xs">
+                    Télécharger
+                  </a>
                 </div>
               ))
             )}
-          </div>
-        </section>
-
-        {/* Notifications récentes */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-red-800">Notifications récentes</h2>
-          <ul>
-            {notifications.length === 0 ? (
-              <li className="text-gray-500">Aucune notification.</li>
-            ) : (
-              notifications.map(notif => (
-                <li key={notif.id} className="mb-2 bg-white rounded shadow px-4 py-2 border-l-4 border-red-700">
-                  <span className="text-gray-700">{notif.message}</span>
-                  <span className="text-xs text-gray-400 ml-2">{notif.date}</span>
-                </li>
-              ))
-            )}
-          </ul>
-        </section>
-
-        {/* Accès à la messagerie projet */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-red-800">Messagerie projet</h2>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-700">
-            {messages.length === 0 ? (
-              <div className="text-gray-500">Aucun message pour le moment.</div>
-            ) : (
-              <ul>
-                {messages.map(msg => (
-                  <li key={msg.id} className="mb-2">
-                    <span className="font-semibold text-gray-800">{msg.auteur} :</span>
-                    <span className="ml-2 text-gray-700">{msg.contenu}</span>
-                    <span className="ml-2 text-xs text-gray-400">{msg.date}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <a href="/client/messages" className="text-red-700 hover:underline text-sm font-medium block mt-2">Accéder à la messagerie complète</a>
           </div>
         </section>
       </main>

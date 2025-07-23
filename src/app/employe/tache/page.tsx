@@ -27,8 +27,9 @@ interface Stats {
   bloquees: number;
 }
 
+
 export default function TachesEmployePage() {
-  const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
+  const [user, setUser] = useState<{ id: number; nom: string; email: string }>({ id: 0, nom: '', email: '' });
   const [taches, setTaches] = useState<Tache[]>([]);
   const [stats, setStats] = useState<Stats>({
     total: 0,
@@ -41,6 +42,11 @@ export default function TachesEmployePage() {
   const [statutFilter, setStatutFilter] = useState('tous');
   const [selectedTache, setSelectedTache] = useState<Tache | null>(null);
   const [showModal, setShowModal] = useState(false);
+
+  // Ajouter ces états dans le composant
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<boolean>(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -142,6 +148,42 @@ export default function TachesEmployePage() {
       }
     } catch (error) {
       console.error('Erreur:', error);
+    }
+  };
+
+  // Ajouter cette fonction
+  const handleFileUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile || !selectedTache) return;
+
+    setUploadProgress(true);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/employe/tache/${selectedTache.id}/document?userId=${user.id}`, 
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: formData
+        }
+      );
+
+      if (res.ok) {
+        setSelectedFile(null);
+        // Réinitialiser le champ de fichier
+        const fileInput = document.getElementById('document-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+        // Afficher un message de succès
+        alert('Document uploadé avec succès');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+    } finally {
+      setUploadProgress(false);
     }
   };
 
@@ -252,8 +294,8 @@ export default function TachesEmployePage() {
 
         {/* Détails de la tâche (Modal) */}
         {showModal && selectedTache && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl">
+          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white text-gray-700 rounded-lg shadow-xl p-8 w-full max-w-2xl">
               <div className="flex justify-between items-start mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">{selectedTache.titre}</h2>
                 <div className="flex gap-2">
@@ -306,6 +348,42 @@ export default function TachesEmployePage() {
                     </p>
                   </div>
                 )}
+
+                {/* Ajouter cette section pour les documents */}
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-medium text-gray-700 mb-4">Documents</h3>
+                  
+                  <form onSubmit={handleFileUpload} className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <input
+                        id="document-upload"
+                        type="file"
+                        accept=".pdf,.zip"
+                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                        className="block w-full text-sm text-gray-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-blue-50 file:text-blue-700
+                          hover:file:bg-blue-100"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!selectedFile || uploadProgress}
+                        className={`px-4 py-2 rounded-lg text-white ${
+                          !selectedFile || uploadProgress 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                      >
+                        {uploadProgress ? 'Upload en cours...' : 'Uploader'}
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Formats acceptés: PDF, ZIP. Taille maximale: 10MB
+                    </p>
+                  </form>
+                </div>
 
                 <div className="flex justify-end gap-4 mt-8">
                   <button

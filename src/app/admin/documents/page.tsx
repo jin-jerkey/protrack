@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/app/component/siderbar';
 import { Download, Search, FileIcon } from 'lucide-react';
-import SidebarClient from '@/app/component/siderbarclient';
 
 interface Document {
   id: number;
@@ -99,7 +99,7 @@ export default function DocumentsAdminPage() {
 
   return (
     <div className="flex">
-      <SidebarClient user={user} />
+      <Sidebar user={user} />
       <main className="flex-1 ml-72 md:ml-60 sm:ml-20 p-8 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">

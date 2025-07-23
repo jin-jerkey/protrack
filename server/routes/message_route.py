@@ -65,21 +65,34 @@ def create_message():
 
     try:
         cursor = conn.cursor()
+        
+        # Insérer le message
         cursor.execute("""
             INSERT INTO message (Contenu, ID_projet, Id_user, Id_destinataire, Type)
             VALUES (%s, %s, %s, %s, 'message')
         """, (data['contenu'], data['projetId'], data['userId'], data['destinataireId']))
         
-        conn.commit()
-        
-        # Créer une notification pour le destinataire
+        # Créer une notification pour le destinataire avec des informations plus détaillées
         cursor.execute("""
             INSERT INTO notification (Type, Sujet, Contenu, Id_user, ID_projet)
-            VALUES ('portal', 'Nouveau message', %s, %s, %s)
+            SELECT 
+                'portal',
+                'Nouveau message',
+                CONCAT('Nouveau message de ', u.Nom_user, ' dans le projet "', p.NomProjet, '": ', 
+                       CASE 
+                           WHEN LENGTH(%s) > 50 THEN CONCAT(LEFT(%s, 50), '...')
+                           ELSE %s
+                       END),
+                %s,
+                %s
+            FROM utilisateur u, projet p
+            WHERE u.Id_user = %s AND p.ID_projet = %s
         """, (
-            f"Nouveau message de {data.get('userName', 'Utilisateur')}",
-            data['destinataireId'],
-            data['projetId']
+            data['contenu'], data['contenu'], data['contenu'],  # Pour le contenu tronqué
+            data['destinataireId'],  # Destinataire de la notification
+            data['projetId'],        # Projet associé
+            data['userId'],          # Expéditeur pour récupérer son nom
+            data['projetId']         # Projet pour récupérer son nom
         ))
         
         conn.commit()
@@ -154,6 +167,86 @@ def get_project_users():
         
         users = cursor.fetchall()
         return jsonify(users)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@message_bp.route('/api/messages/authorized-users', methods=['GET'])
+def get_authorized_users():
+    """Récupérer les utilisateurs autorisés selon le rôle"""
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({'error': 'Erreur de connexion BDD'}), 500
+
+    try:
+        user_id = request.args.get('userId')
+        role = request.args.get('role')
+        
+        query = """
+            SELECT 
+                Id_user as id,
+                Nom_user as nom,
+                Email as email,
+                Role as role
+            FROM utilisateur
+            WHERE Id_user != %s 
+            AND Role IN ('admin', 'secretaire', 'employe')
+            ORDER BY Role, Nom_user
+        """
+        
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (user_id,))
+        users = cursor.fetchall()
+        return jsonify(users)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@message_bp.route('/api/messages/secretaire', methods=['GET'])
+def get_secretaire_messages():
+    """Récupérer tous les messages pour la secrétaire"""
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({'error': 'Erreur de connexion BDD'}), 500
+
+    try:
+        user_id = request.args.get('userId')
+        cursor = conn.cursor(dictionary=True)
+        
+        # Pour la secrétaire, on récupère tous les messages des projets
+        cursor.execute("""
+            SELECT 
+                m.IdMessage as id,
+                m.Contenu as message,
+                m.DateMessage as date,
+                m.Type as type,
+                m.ID_projet as projetId,
+                p.NomProjet as projetNom,
+                u.Id_user as envoyeurId,
+                u.Nom_user as envoyeurNom,
+                u.Email as envoyeurEmail,
+                ud.Id_user as destinataireId,
+                ud.Nom_user as destinataireNom
+            FROM message m
+            JOIN projet p ON m.ID_projet = p.ID_projet
+            JOIN utilisateur u ON m.Id_user = u.Id_user
+            LEFT JOIN utilisateur ud ON m.Id_destinataire = ud.Id_user
+            ORDER BY m.DateMessage DESC
+        """)
+        
+        messages = cursor.fetchall()
+        
+        for msg in messages:
+            if msg['date']:
+                msg['date'] = msg['date'].strftime('%Y-%m-%d %H:%M:%S')
+                
+        return jsonify(messages)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
