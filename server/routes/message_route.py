@@ -253,3 +253,41 @@ def get_secretaire_messages():
     finally:
         cursor.close()
         conn.close()
+
+
+@message_bp.route('/api/messages/admin/projets', methods=['GET'])
+def get_all_projets():
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({'error': 'Erreur de connexion BDD'}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT ID_projet as id, NomProjet as nom FROM projet ORDER BY NomProjet")
+        projets = cursor.fetchall()
+        return jsonify(projets)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@message_bp.route('/api/messages/admin/utilisateurs', methods=['GET'])
+def get_all_utilisateurs():
+    conn = create_db_connection()
+    if not conn:
+        return jsonify({'error': 'Erreur de connexion BDD'}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT Id_user as id, Nom_user as nom, Email as email
+            FROM utilisateur
+            ORDER BY Nom_user
+        """)
+        utilisateurs = cursor.fetchall()
+        return jsonify(utilisateurs)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
