@@ -51,13 +51,32 @@ interface KPI {
   valeur: string | number;
 }
 
+// Ajoutez cette interface pour les stats des projets
+interface ProjectStats {
+  totalProjets: number;
+  projetsEnCours: number;
+  projetsTermines: number;
+  projetsParStatut: {
+    labels: string[];
+    data: number[];
+  };
+}
+
 export default function Dashboard() {
   const [user, setUser] = useState<{ nom: string; email: string }>({ nom: '', email: '' });
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);
-  // const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [projectStats, setProjectStats] = useState<ProjectStats>({
+    totalProjets: 0,
+    projetsEnCours: 0,
+    projetsTermines: 0,
+    projetsParStatut: {
+      labels: [],
+      data: []
+    }
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -93,7 +112,21 @@ export default function Dashboard() {
       }
     };
 
+    // Ajouter ceci dans votre fonction fetchDashboardData
+    const fetchProjectStats = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/dashboard/project-stats');
+        if (res.ok) {
+          const data = await res.json();
+          setProjectStats(data);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des stats projets:', error);
+      }
+    };
+
     fetchDashboardData();
+    fetchProjectStats();
   }, []);
 
   // Configuration des graphiques
@@ -120,6 +153,54 @@ export default function Dashboard() {
         <h1 className="text-4xl font-extrabold mb-8 text-center text-red-700 drop-shadow-lg bg-white py-4 rounded-lg shadow">
           Tableau de bord Administrateur
         </h1>
+
+        {/* Stats des projets */}
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-red-800">État des Projets</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-700">
+              <h3 className="text-gray-600 text-sm">Total des projets</h3>
+              <p className="text-2xl font-bold text-red-700 mt-2">{projectStats.totalProjets}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+              <h3 className="text-gray-600 text-sm">Projets en cours</h3>
+              <p className="text-2xl font-bold text-green-500 mt-2">{projectStats.projetsEnCours}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+              <h3 className="text-gray-600 text-sm">Projets terminés</h3>
+              <p className="text-2xl font-bold text-blue-500 mt-2">{projectStats.projetsTermines}</p>
+            </div>
+          </div>
+
+          {/* Graphique des projets */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4 text-gray-500">Répartition des projets par statut</h3>
+            <div className="h-64">
+              <Pie
+                data={{
+                  labels: ['En cours', 'Terminés', 'En pause'],
+                  datasets: [{
+                    data: [
+                      projectStats.projetsEnCours,
+                      projectStats.projetsTermines,
+                      projectStats.totalProjets - (projectStats.projetsEnCours + projectStats.projetsTermines)
+                    ],
+                    backgroundColor: ['#10B981', '#3B82F6', '#F59E0B']
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom' as const
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </section>
 
         {/* KPIs */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

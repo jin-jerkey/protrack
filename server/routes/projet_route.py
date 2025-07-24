@@ -261,6 +261,8 @@ def update_tache(id):
         return jsonify({'error': 'Erreur de connexion BDD'}), 500
     try:
         cursor = conn.cursor()
+        
+        # Mettre à jour la tâche
         cursor.execute("""
             UPDATE taches 
             SET IntituleTache = %s, 
@@ -271,10 +273,49 @@ def update_tache(id):
                 DateFinReelle = %s
             WHERE IdTache = %s
         """, (titre, description, statut, dateDebut, dateFin, dateFinReelle, id))
+
+        # Récupérer l'ID du projet associé à cette tâche
+        cursor.execute("SELECT ID_projet FROM taches WHERE IdTache = %s", (id,))
+        projet_id = cursor.fetchone()[0]
+
+        # Vérifier si toutes les tâches du projet sont terminées
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_taches,
+                SUM(CASE WHEN Statut = 'terminée' THEN 1 ELSE 0 END) as taches_terminees
+            FROM taches 
+            WHERE ID_projet = %s
+        """, (projet_id,))
+        
+        result = cursor.fetchone()
+        total_taches, taches_terminees = result[0], result[1]
+
+        # Si toutes les tâches sont terminées, mettre à jour le statut du projet
+        if total_taches > 0 and total_taches == taches_terminees:
+            cursor.execute("""
+                UPDATE projet 
+                SET Statut_projet = 'termine', 
+                    Avancement = 100
+                WHERE ID_projet = %s
+            """, (projet_id,))
+
+            # Créer une notification pour l'administrateur
+            cursor.execute("""
+                INSERT INTO notification 
+                (Type, Sujet, Contenu, Id_user, ID_projet)
+                SELECT 'portal', 'Projet terminé', 
+                       CONCAT('Le projet #', %s, ' est maintenant terminé'), 
+                       Id_user, %s
+                FROM utilisateur 
+                WHERE Role = 'admin'
+            """, (projet_id, projet_id))
+
         conn.commit()
-        if cursor.rowcount == 0:
-            return jsonify({'error': 'Tâche non trouvée'}), 404
-        return jsonify({'message': 'Tâche modifiée'})
+        return jsonify({'message': 'Tâche modifiée', 'projet_termine': total_taches == taches_terminees})
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
         conn.close()

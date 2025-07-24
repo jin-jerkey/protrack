@@ -468,3 +468,48 @@ def get_secretaire_dashboard_stats():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@dashboard_bp.route('/api/dashboard/project-stats', methods=['GET'])
+def get_project_stats():
+    """Récupère les statistiques des projets"""
+    try:
+        connection = create_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Total des projets
+        cursor.execute("SELECT COUNT(*) as total FROM projet")
+        total = cursor.fetchone()['total']
+        
+        # Projets en cours
+        cursor.execute("SELECT COUNT(*) as count FROM projet WHERE Statut_projet = 'en_cours'")
+        en_cours = cursor.fetchone()['count']
+        
+        # Projets terminés
+        cursor.execute("SELECT COUNT(*) as count FROM projet WHERE Statut_projet = 'termine'")
+        termines = cursor.fetchone()['count']
+        
+        # Statistiques par statut
+        cursor.execute("""
+            SELECT Statut_projet, COUNT(*) as count 
+            FROM projet 
+            GROUP BY Statut_projet
+        """)
+        statuts = cursor.fetchall()
+        
+        stats = {
+            'totalProjets': total,
+            'projetsEnCours': en_cours,
+            'projetsTermines': termines,
+            'projetsParStatut': {
+                'labels': [s['Statut_projet'] for s in statuts],
+                'data': [s['count'] for s in statuts]
+            }
+        }
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify(stats)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

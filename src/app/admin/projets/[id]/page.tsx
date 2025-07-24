@@ -112,15 +112,48 @@ export default function DetailProjetPage() {
     fetchUtilisateurs();
   }, [params.id, fetchProjetDetails, fetchTaches]);
 
+  // Fonction de validation des dates
+  const validateDates = (dateDebut: string, dateFin: string) => {
+    if (!projet?.dateDebut || !projet?.dateFinPrevue) return true;
+
+    const projetDebut = new Date(projet.dateDebut);
+    const projetFin = new Date(projet.dateFinPrevue);
+    const tacheDebut = new Date(dateDebut);
+    const tacheFin = new Date(dateFin);
+
+    // Vérifier que les dates de la tâche sont dans l'intervalle du projet
+    if (tacheDebut < projetDebut || tacheFin > projetFin) {
+      return false;
+    }
+
+    // Vérifier que la date de fin est après la date de début
+    if (tacheFin < tacheDebut) {
+      return false;
+    }
+
+    return true;
+  };
+
   // Gestion des tâches
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const method = editId ? 'PUT' : 'POST';
-    const url = editId
-      ? `http://localhost:5000/api/tache/${editId}`
-      : `http://localhost:5000/api/projet/${params.id}/tache`;
+
+    // Validation des dates
+    if (form.dateDebut && form.dateFin) {
+      if (!validateDates(form.dateDebut, form.dateFin)) {
+        alert('Les dates de la tâche doivent être comprises entre ' +
+              `${new Date(projet?.dateDebut || '').toLocaleDateString()} et ` +
+              `${new Date(projet?.dateFinPrevue || '').toLocaleDateString()}`);
+        return;
+      }
+    }
 
     try {
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId
+        ? `http://localhost:5000/api/tache/${editId}`
+        : `http://localhost:5000/api/projet/${params.id}/tache`;
+
       const res = await fetch(url, {
         method,
         headers: {
@@ -129,8 +162,27 @@ export default function DetailProjetPage() {
         },
         body: JSON.stringify(form)
       });
+
       if (res.ok) {
+        const data = await res.json();
+        
+        // Si le projet est terminé, mettre à jour l'interface
+        if (data.projet_termine) {
+          setProjet(prev => prev ? {
+            ...prev,
+            statut: 'termine',
+            avancement: 100
+          } : null);
+          
+          // Optionnel : Afficher une notification à l'utilisateur
+          alert('Toutes les tâches sont terminées. Le projet a été marqué comme terminé.');
+        }
+
+        // Rafraîchir les données
         fetchTaches();
+        fetchProjetDetails();
+        
+        // Réinitialiser le formulaire
         setShowModal(false);
         setEditId(null);
         setForm({
@@ -365,7 +417,7 @@ export default function DetailProjetPage() {
 
         {/* Modal d'ajout/modification de tâche */}
         {showModal && (
-          <div className="fixed inset-0 border-gray-900 shadow-gray-900 text-gray-700  bg-opacity-10 flex items-center justify-center z-50">
+          <div className="fixed inset-0 text-gray-700 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">
                 {editId ? 'Modifier la tâche' : 'Nouvelle tâche'}
@@ -433,27 +485,56 @@ export default function DetailProjetPage() {
                   </div>
                 </div>
 
-                {/* Dates */}
+                {/* Dates avec info sur les limites du projet */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
-                      Date de début
+                      Date de début *
+                      <span className="text-xs text-gray-500 block">
+                        Min: {projet?.dateDebut ? new Date(projet.dateDebut).toLocaleDateString() : 'Non défini'}
+                      </span>
                     </label>
                     <input
                       type="date"
+                      required
                       value={form.dateDebut}
-                      onChange={e => setForm({ ...form, dateDebut: e.target.value })}
+                      min={projet?.dateDebut}
+                      max={projet?.dateFinPrevue}
+                      onChange={e => {
+                      const selectedDate = new Date(e.target.value);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0); // Réinitialise l'heure à minuit
+                      if (selectedDate >= today) {
+                        setForm({ ...form, dateDebut: e.target.value });
+                      } else {
+                        alert('La date de début ne peut pas être antérieure à aujourd\'hui');
+                        setForm({ ...form, dateDebut: new Date().toISOString().split('T')[0] });
+                      }
+                    }}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
                     />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
-                      Date de fin prévue
+                      Date de fin prévue *
+                      <span className="text-xs text-gray-500 block">
+                        Max: {projet?.dateFinPrevue ? new Date(projet.dateFinPrevue).toLocaleDateString() : 'Non défini'}
+                      </span>
                     </label>
                     <input
                       type="date"
+                      required
                       value={form.dateFin}
-                      onChange={e => setForm({ ...form, dateFin: e.target.value })}
+                      min={form.dateDebut || projet?.dateDebut}
+                      max={projet?.dateFinPrevue}
+                      onChange={e => {
+                        const newDate = e.target.value;
+                        if (form.dateDebut && new Date(newDate) < new Date(form.dateDebut)) {
+                          alert('La date de fin ne peut pas être avant la date de début');
+                          return;
+                        }
+                        setForm({ ...form, dateFin: newDate });
+                      }}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500"
                     />
                   </div>
